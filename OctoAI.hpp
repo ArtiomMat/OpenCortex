@@ -4,6 +4,7 @@
 
 namespace OAI {
 	typedef char I8;
+	typedef short I16;
 	typedef int I32;
 	typedef unsigned char U8;
 	typedef unsigned short U16;
@@ -29,6 +30,8 @@ namespace OAI {
 
 		float ToFloat();
 	};
+
+	typedef SFixed8 DataUnit;
 
 	class Map {
 		public:
@@ -74,8 +77,8 @@ namespace OAI {
 		bool SavePNG(const char* Fp);
 
 		protected:
-		void _Allocate(U16 Width, U16 Height, U32 ChannelsNum);
-		void _Free();
+		void Allocate(U16 Width, U16 Height, U32 ChannelsNum);
+		void Free();
 	};
 
 	class NeuronsModel;
@@ -84,15 +87,16 @@ namespace OAI {
 	class Model {
 		public:
 		virtual void Run(Map* Maps, int MapsN) = 0;
-		virtual void Run(U8* Arr) = 0;
+		virtual void Run(U8* Arr, SFixed8* Output) = 0;
 	};
 
 	enum Activation {
+		Null,
 		RELU,
 		LeakyRELU,
 		ELU,
 		Sigmoid,
-		TanH
+		TanH,
 	};
 
 	class NeuronsModel : public Model {
@@ -102,38 +106,49 @@ namespace OAI {
 			U32 Func : 3;
 		};
 
+		const static Layer NullLayer;
+
 		private:
-		struct _Neuron {
+		class RunState {
+			public:
+			unsigned TWI = 0, TNI = 0;
+
+			char FedBufI = 1;
+			SFixed8* Bufs[2];
+
+			RunState(int BigLayerNeuronsN);
+			~RunState();
+
+			private:
+			SFixed8* EntireBuf;
+		};
+
+		struct Neuron {
 			SFixed8 Bias;
-		}* _Neurons;
+		}* Neurons;
 
-		struct _Wire {
+		struct Wire {
 			SFixed8 Weight;
-		}* _Wires;
+		}* Wires;
 
-		int _InputUnitsN;
-		int _BigLayerI;
+		int InputUnitsN;
+		int BigLayerI;
 
-		Layer* _Layers;
-		int _LayersN;
+		Layer* Layers;
+		int LayersN;
 
-		void _Activate(SFixed8& V, int Func);
-		// TNI = Total Neuron Index, the index of the first neurons.
-		// TWI = Total Wire Index, the index of the first wires.
-		// 
-		void _RunChunk(int TNI, int TWI, SFixed8* Bufs[2], int FirstLI, int LastLI);
-		// NOTE!!!! Second buffer is assumed to be the input buffer, this is because when you continue to run using _RunChunk on the second layer we want the first buffer to be the input!
-		void _RunFirstLayer(SFixed8* Bufs[2]);
-		void _RunLayer(char& FedBufI, int& TNI, int& TWI, SFixed8* Bufs[2], int LI, int PrevNeuronsN);
-
+		void Activate(SFixed8& V, int Func);
+		
+		void RunLayer(RunState& State, int LI, int PrevNeuronsN);
+		void RunChunk(RunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN);
 		public:
 		// Input sources include both raw inputs and model outputs as inputs.
-		// L is terminated with L[I].NeuronsN = 0
+		// L is terminated with NeuronsModel::NullLayer (NeuronsN = 0)
 		NeuronsModel(int InputUnitsN, Layer* L);
 		~NeuronsModel();
 
 		void Run(Map* Maps, int MapsN);
-		void Run(U8* Arr);
+		void Run(U8* Arr, SFixed8* Output);
 
 		void Fit(Map* Maps, int MapsN);
 		void Fit(U8* Arr);
