@@ -1,0 +1,4 @@
+
+* If you plan on using it: Only use it. It only monitors it's threads, not threads opened by other libraries, so only use it for thread managment.
+
+* Log() is used to 

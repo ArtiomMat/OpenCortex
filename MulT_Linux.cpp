@@ -2,14 +2,32 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
 #include <sys/resource.h>
+#include <stdint.h>
 
 #include "MulT.hpp"
 
 namespace MulT {
+	typedef uint32_t U32;
+	typedef uint16_t U16;
+	typedef uint8_t U8;
 
-	static int Cores;
+	static int OptimalN;
+	static int ThreadsN;
+
+	static struct _Graph {
+		static const int PlotsN = 16; // TODO: Make it aligned
+
+		U8 PlotIndex;
+		U8 PlotsFull; // If 1 then it means after PlotIndex we have the "oldest" plot, and thats how we are supposed to read Plots[]. Otherwise Plots[0] is the oldest plot.
+		U16 Plots[PlotsN];
+		U32 MeasureTick;
+	} Graph;
+	static int CoresN;
+
+	static void Thread() {
+		
+	}
 
 	bool Setup() {
 		FILE* F = fopen("/proc/cpuinfo", "r");
@@ -60,18 +78,18 @@ namespace MulT {
 
 		StrCores[I] = 0;
 
-		Cores = atoi(StrCores);
+		CoresN = atoi(StrCores);
 
 		return true;
 	}
 
 	float GetUsage() {
-		struct rusage usage;
-    	getrusage(RUSAGE_SELF, &usage);
+		struct rusage Usage;
+    	getrusage(RUSAGE_SELF, &Usage);
 
     	printf("CPU Time Used: %ld.%06ld seconds\n",
-           usage.ru_utime.tv_sec + usage.ru_stime.tv_sec,
-           usage.ru_utime.tv_usec + usage.ru_stime.tv_usec);
+           Usage.ru_utime.tv_sec + Usage.ru_stime.tv_sec,
+           Usage.ru_utime.tv_usec + Usage.ru_stime.tv_usec);
 	}
 }
 
