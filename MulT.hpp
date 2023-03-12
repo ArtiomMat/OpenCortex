@@ -4,9 +4,9 @@
 
 namespace MulT {
 	typedef void* (*CallBack)(void* Input);
-	typedef unsigned char GroupI;
+	typedef char GroupI;
 
-	typedef unsigned short ThreadI;
+	typedef short ThreadI;
 
 	// Toptimal amount of threads possible, This is what makes MulT the GOAT.
 	// At first it's definately better than one thread, but MAY be worse than the real optimal, over time it improves.
@@ -23,6 +23,7 @@ namespace MulT {
 	Returns weather or not OptimalN changed.
 
 	!!!RULES OF THUMB!!!
+	TODO: Remove this and just fatalize program if all threads didn't stop
 	- Run Log after all threads stopped, you can do that with WaitFor(). Calculations assume all your measured threads died at the time of the log.
 
 	- Do not Log in multiple places, a log is meant to happen once every tick/frame or whatever your metric is, every cycle.
@@ -31,10 +32,10 @@ namespace MulT {
 	
 	- Log is not instant, it doesn't actually just log your CPU usage, it also may attempt to determine the next optimal number of threads possible, which could is a little for loop over the logs and a calculation. Watch out for the updates in OptimalN.
 	*/
-	bool Log();
+	bool ComputeOptimalN();
 
 	GroupI AddGroup(CallBack CB);
-
+	// -1 if failed, can only fail if you exceed the optimal threads.
 	ThreadI OpenThread(GroupI G, void* Input);
 	void* GetThreadOutput(ThreadI Index);
 }

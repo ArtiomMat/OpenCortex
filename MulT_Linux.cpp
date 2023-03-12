@@ -5,28 +5,49 @@
 #include <sys/resource.h>
 #include <stdint.h>
 
+#include <vector>
+
 #include "MulT.hpp"
 
 namespace MulT {
+	typedef uint64_t U64;
 	typedef uint32_t U32;
 	typedef uint16_t U16;
 	typedef uint8_t U8;
 
-	static int OptimalN;
-	static int ThreadsN;
 
-	static struct _Graph {
+	static struct {
 		static const int PlotsN = 16; // TODO: Make it aligned
 
 		U8 PlotIndex;
 		U8 PlotsFull; // If 1 then it means after PlotIndex we have the "oldest" plot, and thats how we are supposed to read Plots[]. Otherwise Plots[0] is the oldest plot.
-		U16 Plots[PlotsN];
-		U32 MeasureTick;
+		U64 LastUsage;
+		U32 Plots[PlotsN];
 	} Graph;
-	static int CoresN;
 
-	static void Thread() {
+	struct GroupState {
+		struct ThreadState {
+			void* Return = nullptr; // nullptr for no return
+		};
+
+		std::vector<ThreadState> Threads;
+	};
+
+	int OptimalN;
+
+	static int CoresN;
+	static int ThreadsN;
+
+	GroupI AddGroup(CallBack CB) {
 		
+	}
+	
+	ThreadI OpenThread(GroupI G, void* Input) {
+
+	}
+
+	void* GetThreadOutput(ThreadI Index) {
+
 	}
 
 	bool Setup() {
@@ -83,13 +104,15 @@ namespace MulT {
 		return true;
 	}
 
-	float GetUsage() {
+	U64 GetUsage() {
 		struct rusage Usage;
-    	getrusage(RUSAGE_SELF, &Usage);
+		getrusage(RUSAGE_SELF, &Usage);
 
-    	printf("CPU Time Used: %ld.%06ld seconds\n",
-           Usage.ru_utime.tv_sec + Usage.ru_stime.tv_sec,
-           Usage.ru_utime.tv_usec + Usage.ru_stime.tv_usec);
+		U64 Ret = Usage.ru_utime.tv_sec + Usage.ru_stime.tv_sec;
+		Ret *= 1000000;
+		Ret += Usage.ru_utime.tv_usec + Usage.ru_stime.tv_usec;
+		
+		return Ret;
 	}
 }
 
@@ -97,7 +120,6 @@ namespace MulT {
 int main() {
 	while (1) {
 		MulT::GetUsage();
-		
 	}
 	return 0;
 }
