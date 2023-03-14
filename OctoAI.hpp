@@ -2,13 +2,20 @@
 
 #include <stdio.h>
 
+#ifndef __INT64_TYPE__
+	#error No __INT64_TYPE__? are you compiling this for a ?
+#endif
+
 namespace OAI {
 	typedef char I8;
 	typedef short I16;
 	typedef int I32;
+	typedef long long I64;
+
 	typedef unsigned char U8;
 	typedef unsigned short U16;
 	typedef unsigned int U32;
+	typedef unsigned long long U64;
 
 	struct SFixed8 {
 		// N is how many 2's SFixed8::Q is divided by to get the actual value of the fixed number, e.g. N=2,Q=3 <-> Value=3/2**2 = 3/4 = 0.75

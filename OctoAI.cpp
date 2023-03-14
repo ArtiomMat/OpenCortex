@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "OctoAI.hpp"
+#include "OctoAI_Threads.hpp"
 
 namespace OAI {
 	const NeuronsModel::Layer NeuronsModel::NullLayer{0};
