@@ -15,7 +15,7 @@ namespace OAI {
 		void Open(int ThreadsN, void** Inputs, void** Outputs);
 		void Join();
 
-		protected:
+		// protected:
 		CallBack CB;
 		struct ThreadCallArg {
 			ThreadCallArg(Threader* T, void* Input, void** OutputPtr) {
@@ -28,11 +28,11 @@ namespace OAI {
 			void** OutputPtr;
 		};
 		static void* ThreadCall(void* Arg);
-		// Returns thread ID
-		U64 OpenSingle(void*(*Call)(void* Arg), void* Input, void** OutputPtr);
+		static void ThreadCall(ThreadCallArg* Arg);
+		void AllocHandles(int N);
 		
 		U8 HandlesN = 0;
-		U64* Handles;
+		U64* Handles = nullptr;
 	};
 	
 	// A monitor is a threader but smarter.
@@ -69,6 +69,16 @@ namespace OAI {
 				delete [] Arr;
 			}
 
+			U16 GetLength() {
+				if (Full)
+					return Size;
+				return First;
+			}
+
+			void Clear() {
+				First = Full = 0;
+			}
+
 			// 1 <= VirtualI < Size
 			Type& GetRef(U32 VirtualI) {
 				if (Full)
@@ -102,15 +112,22 @@ namespace OAI {
 			}
 		};
 
-		void Digest();
-		void CalcOptimalN();
-
-		struct Summary {
+		struct Digest {
 			U16 UsageSlope;
 			U16 ThreadsUsed;
-		};
+		} LastDigest;
 
-		History<Summary> Digests = History<Summary>(6);
-		History<U16> PlotsNow = History<U16>(16);
+		// // Index != 0, assumes it is the last thread.
+		// struct ExThreadCallArg : ThreadCallArg {
+		// 	ExThreadCallArg(Threader* T, void* Input, void** OutputPtr, int Index=-1) : ThreadCallArg(T, Input, OutputPtr) {
+		// 		this->Index = Index;
+		// 	}
+		// 	int Index;
+		// };
+
+		// static void* ThreadCall(void* Arg);
+
+		// History<Digest> Digests = History<Digest>(6);
+		History<U16> UsagePlots = History<U16>(16);
 	};
 }

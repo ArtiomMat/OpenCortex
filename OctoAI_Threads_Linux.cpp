@@ -91,48 +91,55 @@ namespace OAI {
 	}
 
 	Threader::~Threader() {
+		// FIXME: Leak, if we cancel too early not all threads will deallocate their Args D:
 		for (int I = 0; I < HandlesN; I++)
 			pthread_cancel((pthread_t)Handles[I]);
+		
+		delete [] Handles;
 	}
 
 	void* Threader::ThreadCall(void* _Arg) {
-		ThreadCallArg* Arg = (ThreadCallArg*)_Arg;
-
-		void* Output = Arg->T->CB(Arg->Input);
-
-		if (Arg->OutputPtr)
-			*Arg->OutputPtr = Output;
-
-		// Cleanup
-		delete Arg;
-
+		ThreadCallArg* ArgPtr = (ThreadCallArg*)_Arg;
+		ThreadCall(ArgPtr);
 		return nullptr;
 	}
 
-	U64 Threader::OpenSingle(void*(*Call)(void* Arg), void* _Input, void** OutputPtr) {
-		pthread_t Handle;
-		
-		ThreadCallArg* Input = new ThreadCallArg(this, _Input, OutputPtr);
-		pthread_create(&Handle, nullptr, Call, Input);
-		
-		return (U64)Handle;
+	void Threader::ThreadCall(ThreadCallArg* ArgPtr) {
+		void* Output = ArgPtr->T->CB(ArgPtr->Input);
+
+		if (ArgPtr->OutputPtr)
+			*ArgPtr->OutputPtr = Output;
+
+		// Cleanup
+		delete ArgPtr;
+	}
+
+	void Threader::AllocHandles(int N) {
+		delete [] Handles;
+		if (HandlesN != N) {
+			HandlesN = N;
+			Handles = new U64 [HandlesN];
+		}
 	}
 
 	void Threader::Open(int HandlesN, void** Inputs, void** Outputs) {
-		if (this->HandlesN != HandlesN) {
-			this->HandlesN = HandlesN;
-			Handles = new U64 [HandlesN];
-		}
+		AllocHandles(HandlesN);
 
 		for (int I = 0; I < HandlesN; I++) {
-			Handles[I] = OpenSingle(ThreadCall, Inputs[I], Outputs+I);
+			ThreadCallArg* Input = new ThreadCallArg(this, Inputs[I], Outputs+I);
+			pthread_create((pthread_t*)(Handles+I), nullptr, ThreadCall, Input);
 		}
 	}
 
 	void Threader::Join() {
 		// TODO: Maybe refactor so that instead of nullptr Outputs[I] is there.
-		for (int I = 0; I < HandlesN; I++)
+		for (int I = 0; I < HandlesN; I++) {
 			pthread_join((pthread_t)Handles[I], nullptr);
+			puts("OK");
+			fflush(stdout);
+		}
+			puts("DONE");
+			fflush(stdout);
 	}
 
 	/*
@@ -162,11 +169,50 @@ namespace OAI {
 		OptimalN = CoresN;
 	}
 
-	float Monitor::Open(void** Inputs, void** Outputs) {
-		U64 StartUsage = GetUsageTime();
-		Threader::OpenSingle(ThreadCall, Inputs[0], Outputs);
+	Monitor::~Monitor() {
+		Threader::~Threader();
 	}
 
+	// void* Monitor::ThreadCall(void* _Arg) {
+	// 	ExThreadCallArg* ArgPtr = (ExThreadCallArg*)_Arg;
+	// 	Threader::ThreadCall(ArgPtr);
+
+	// 	// If EndUsage is not nullptr we are supposed to Join with the other threads and checkout the usage.
+	// 	// In other words, this ThreadCall is the monitoring one.
+	// 	if (ArgPtr->Index != -1) {
+	// 		Monitor* M = (Monitor*)ArgPtr->T;
+			
+	// 		M->UsagePlots += GetUsageTime();
+	// 	}
+
+	// 	return nullptr;
+	// }
+
+	float Monitor::Open(void** Inputs, void** Outputs) {
+		// If we cleared UsagePlots add the current usage, the more information the better.
+		if (!UsagePlots.Full && !UsagePlots.First)
+			UsagePlots += GetUsageTime();
+		
+		// ExThreadCallArg* Input;
+		// int I;
+		
+		// for (I = 0; I < HandlesN-1; I++) {
+		// 	Input = new ExThreadCallArg(this, Inputs[I], Outputs+I);
+		// 	pthread_create((pthread_t*)(Handles+I), nullptr, ThreadCall, Input);
+		// }
+
+		// // Give the last one the UsagePlots.
+		// Input = new ExThreadCallArg(this, Inputs[I], Outputs+I, I);
+		// pthread_create((pthread_t*)(Handles+I), nullptr, ThreadCall, Input);
+
+		Threader::Open(OptimalN, Inputs, Outputs);
+		Join();
+		UsagePlots += GetUsageTime();
+
+		if (UsagePlots.Full) {
+			
+		}
+	}
 
 }
 
@@ -182,9 +228,9 @@ void* Func(void* Input) {
 }
 
 int main() {
-	OAI::Threader T(Func);
+	OAI::Monitor T(Func);
 	void* Inputs[] = {nullptr,nullptr,nullptr};
-	T.Open(3, Inputs, Inputs);
+	T.Open(Inputs, Inputs);
 	T.Join();
 	return 0;
 }
