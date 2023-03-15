@@ -4,7 +4,7 @@
 #include "OctoAI.hpp"
 
 namespace OAI {
-	// The threader doesn't keep track of the opened threads, if it gets out of scope you fucked up.
+	// If Threader gets out of scope it closes all threads it opened.
 	class Threader {
 		public:
 		typedef void* (*CallBack)(void* Input);
@@ -12,10 +12,10 @@ namespace OAI {
 		Threader(CallBack CB);
 		~Threader();
 
-		void Open(int N, void** Inputs, void** Outputs);
+		void Open(int ThreadsN, void** Inputs, void** Outputs);
 		void Join();
 
-		private:
+		protected:
 		CallBack CB;
 		struct ThreadCallArg {
 			ThreadCallArg(Threader* T, void* Input, void** OutputPtr) {
@@ -28,11 +28,11 @@ namespace OAI {
 			void** OutputPtr;
 		};
 		static void* ThreadCall(void* Arg);
-
-		U16 ThreadsN;
-		U16 DoneN;
-
-		int PipeFd[2];
+		// Returns thread ID
+		U64 OpenSingle(void*(*Call)(void* Arg), void* Input, void** OutputPtr);
+		
+		U8 HandlesN = 0;
+		U64* Handles;
 	};
 	
 	// A monitor is a threader but smarter.
@@ -56,8 +56,9 @@ namespace OAI {
 		class History {
 			public:
 			Type* Arr;
-			U32 Size;
-			U32 First = 0;
+			U16 Size;
+			U16 First = 0;
+			U8 Full = 0;
 
 			History(U32 Size) {
 				this->Size = Size;
@@ -70,7 +71,8 @@ namespace OAI {
 
 			// 1 <= VirtualI < Size
 			Type& GetRef(U32 VirtualI) {
-				VirtualI += First;
+				if (Full)
+					VirtualI += First;
 
 				if (VirtualI >= Size)
 					return Arr[VirtualI-Size];
@@ -82,11 +84,13 @@ namespace OAI {
 				GetRef(VirtualI) = Data;
 			}
 
-			void Add(Type& X) {
+			void Add(Type X) {
 				Arr[First++] = X;
 
-				if (First == Size)
+				if (First == Size) {
+					Full = 1;
 					First = 0;
+				}
 			}
 
 			Type& operator[](U32 VI) {
@@ -109,5 +113,4 @@ namespace OAI {
 		History<Summary> Digests = History<Summary>(6);
 		History<U16> PlotsNow = History<U16>(16);
 	};
-	
 }

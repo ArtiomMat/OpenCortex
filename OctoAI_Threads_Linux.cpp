@@ -87,28 +87,18 @@ namespace OAI {
 
 	Threader::Threader(CallBack CB) {
 		this->CB = CB;
-		ThreadsN = CoresN;
-		// TODO: Could use mutexes and conds instead
-		if (pipe(PipeFd))
-			puts("Threader::Threader(): Failed to create pipe.");
+		HandlesN = CoresN;
 	}
 
 	Threader::~Threader() {
-		close(PipeFd[0]);
-		close(PipeFd[1]);
+		for (int I = 0; I < HandlesN; I++)
+			pthread_cancel((pthread_t)Handles[I]);
 	}
 
 	void* Threader::ThreadCall(void* _Arg) {
 		ThreadCallArg* Arg = (ThreadCallArg*)_Arg;
 
 		void* Output = Arg->T->CB(Arg->Input);
-
-		// Signal that we finished
-		char B;
-		puts("Write");
-		fflush(stdout);
-		write(Arg->T->PipeFd[1], &B, 1);
-		// Arg->T->DoneN++;
 
 		if (Arg->OutputPtr)
 			*Arg->OutputPtr = Output;
@@ -119,22 +109,30 @@ namespace OAI {
 		return nullptr;
 	}
 
-	void Threader::Open(int ThreadsN, void** Inputs, void** Outputs) {
-		DoneN = 0;
-		this->ThreadsN = ThreadsN;
-		pthread_t PT;
-		for (int I = 0; I < ThreadsN; I++) {
-			ThreadCallArg* Input = new ThreadCallArg(this, Inputs[I], &Outputs[I]);
-			pthread_create(&PT, nullptr, ThreadCall, Input);
+	U64 Threader::OpenSingle(void*(*Call)(void* Arg), void* _Input, void** OutputPtr) {
+		pthread_t Handle;
+		
+		ThreadCallArg* Input = new ThreadCallArg(this, _Input, OutputPtr);
+		pthread_create(&Handle, nullptr, Call, Input);
+		
+		return (U64)Handle;
+	}
+
+	void Threader::Open(int HandlesN, void** Inputs, void** Outputs) {
+		if (this->HandlesN != HandlesN) {
+			this->HandlesN = HandlesN;
+			Handles = new U64 [HandlesN];
+		}
+
+		for (int I = 0; I < HandlesN; I++) {
+			Handles[I] = OpenSingle(ThreadCall, Inputs[I], Outputs+I);
 		}
 	}
 
 	void Threader::Join() {
-		char B;
-		for (int I = 0; I < ThreadsN; I++) {
-			read(PipeFd[0], &B, 1);
-			puts("Read");
-		}
+		// TODO: Maybe refactor so that instead of nullptr Outputs[I] is there.
+		for (int I = 0; I < HandlesN; I++)
+			pthread_join((pthread_t)Handles[I], nullptr);
 	}
 
 	/*
@@ -165,15 +163,20 @@ namespace OAI {
 	}
 
 	float Monitor::Open(void** Inputs, void** Outputs) {
-		Threader::Open(1, Inputs, Outputs);
+		U64 StartUsage = GetUsageTime();
+		Threader::OpenSingle(ThreadCall, Inputs[0], Outputs);
 	}
+
+
 }
 
 void* Func(void* Input) {
 	int x = 0;
-	int y = 1000000000;
+	int y = 100;
 	while (x < y)
 		x++;
+	puts("Done.");
+	fflush(stdout);
 	
 	return (void*)1;
 }
@@ -182,7 +185,6 @@ int main() {
 	OAI::Threader T(Func);
 	void* Inputs[] = {nullptr,nullptr,nullptr};
 	T.Open(3, Inputs, Inputs);
-	puts("Done.");
+	T.Join();
 	return 0;
-
 }
