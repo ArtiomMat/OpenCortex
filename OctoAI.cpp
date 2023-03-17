@@ -155,7 +155,7 @@ namespace OAI {
 		State.FedBufI = !State.FedBufI; // Swap buffers
 	}
 
-	void NeuronsModel::Run(U8* Arr, SFixed8* Output) {
+	void NeuronsModel::Run(SFixed8* Arr, SFixed8* Output) {
 		RunState State(Layers[BigLayerI].NeuronsN);
 
 		// Run first layer, first copy the input array
@@ -170,7 +170,7 @@ namespace OAI {
 	}
 
 	void NeuronsModel::Run(Map* Maps, int MapsN) {
-		U8* Arr = new U8[InputUnitsN];
+		SFixed8* Arr = new SFixed8[InputUnitsN];
 		int Offset = 0;
 
 		// First we get the size of the array
@@ -209,7 +209,7 @@ int main() {
 	};
 
 	OAI::NeuronsModel M(2, L);
-	OAI::U8 Input[] = {2<<1,2<<2};
+	OAI::SFixed8 Input[] = {2<<1,2<<2};
 	OAI::SFixed8 Output[1];
 	M.Run(Input, Output);
 

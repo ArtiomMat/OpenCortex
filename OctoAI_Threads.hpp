@@ -113,21 +113,11 @@ namespace OAI {
 		};
 
 		struct Digest {
-			U16 UsageSlope;
-			U16 ThreadsUsed;
-		} LastDigest;
+			U16 UsageDeltaAvg = 0;
+			U16 OptimalN = 0;
+		} Digest;
 
-		// // Index != 0, assumes it is the last thread.
-		// struct ExThreadCallArg : ThreadCallArg {
-		// 	ExThreadCallArg(Threader* T, void* Input, void** OutputPtr, int Index=-1) : ThreadCallArg(T, Input, OutputPtr) {
-		// 		this->Index = Index;
-		// 	}
-		// 	int Index;
-		// };
 
-		// static void* ThreadCall(void* Arg);
-
-		// History<Digest> Digests = History<Digest>(6);
-		History<U16> UsagePlots = History<U16>(16);
+		// History<U16> UsageDeltas = History<U16>(16);
 	};
 }

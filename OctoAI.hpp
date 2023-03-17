@@ -94,7 +94,7 @@ namespace OAI {
 	class Model {
 		public:
 		virtual void Run(Map* Maps, int MapsN) = 0;
-		virtual void Run(U8* Arr, SFixed8* Output) = 0;
+		virtual void Run(SFixed8* Arr, SFixed8* Output) = 0;
 	};
 
 	enum Activation {
@@ -155,7 +155,17 @@ namespace OAI {
 		~NeuronsModel();
 
 		void Run(Map* Maps, int MapsN);
-		void Run(U8* Arr, SFixed8* Output);
+		void Run(SFixed8* Input, SFixed8* Output);
+
+		struct FitnessGuider {
+			char* BackupDir = "_Backup";
+			// 0 for no backup, not recommended.
+			// Backup the model every BackupInterval batches.
+			U16 BackupInterval = 5;
+			U16 BatchSize; 
+
+			virtual void GetNextSample(SFixed8* Input, SFixed8* Output) = 0;
+		};
 
 		void Fit(Map* Maps, int MapsN);
 		void Fit(U8* Arr);

@@ -173,44 +173,34 @@ namespace OAI {
 		Threader::~Threader();
 	}
 
-	// void* Monitor::ThreadCall(void* _Arg) {
-	// 	ExThreadCallArg* ArgPtr = (ExThreadCallArg*)_Arg;
-	// 	Threader::ThreadCall(ArgPtr);
-
-	// 	// If EndUsage is not nullptr we are supposed to Join with the other threads and checkout the usage.
-	// 	// In other words, this ThreadCall is the monitoring one.
-	// 	if (ArgPtr->Index != -1) {
-	// 		Monitor* M = (Monitor*)ArgPtr->T;
-			
-	// 		M->UsagePlots += GetUsageTime();
-	// 	}
-
-	// 	return nullptr;
-	// }
-
 	float Monitor::Open(void** Inputs, void** Outputs) {
-		// If we cleared UsagePlots add the current usage, the more information the better.
-		if (!UsagePlots.Full && !UsagePlots.First)
-			UsagePlots += GetUsageTime();
-		
-		// ExThreadCallArg* Input;
-		// int I;
-		
-		// for (I = 0; I < HandlesN-1; I++) {
-		// 	Input = new ExThreadCallArg(this, Inputs[I], Outputs+I);
-		// 	pthread_create((pthread_t*)(Handles+I), nullptr, ThreadCall, Input);
-		// }
+		static const int MaxLogsN = 4;
+		static int LogsN = 0;
+		static U16 UsageDeltaAvg = 0;
 
-		// // Give the last one the UsagePlots.
-		// Input = new ExThreadCallArg(this, Inputs[I], Outputs+I, I);
-		// pthread_create((pthread_t*)(Handles+I), nullptr, ThreadCall, Input);
-
+		U64 StartUsage = GetUsageTime();
 		Threader::Open(OptimalN, Inputs, Outputs);
 		Join();
-		UsagePlots += GetUsageTime();
+		U64 EndUsage = GetUsageTime();
 
-		if (UsagePlots.Full) {
+		UsageDeltaAvg += EndUsage - StartUsage;
+
+		// We begin the calculation
+		if (LogsN >= MaxLogsN) {
+			// Finilize the average
+			UsageDeltaAvg /= MaxLogsN;
+
+			// If Digest.OptimalN is 0 we just started. We want to only compare against actual statistics.
+			if (Digest.OptimalN) {
+				int Boost = Digest.UsageDeltaAvg - UsageDeltaAvg;
+				// The boost needs to be proportional to the difference in threads used
+				Boost /= (OptimalN - Digest.OptimalN);
+			}
 			
+			Digest.UsageDeltaAvg = UsageDeltaAvg;
+			Digest.OptimalN = OptimalN;
+
+			UsageDeltaAvg = LogsN = 0;
 		}
 	}
 
