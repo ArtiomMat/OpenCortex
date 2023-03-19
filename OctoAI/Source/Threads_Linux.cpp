@@ -9,7 +9,7 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
-#include "OctoAI_Threads.hpp"
+#include "Threads.hpp"
 #include "OctoAI.hpp"
 
 namespace OAI {
@@ -22,7 +22,7 @@ namespace OAI {
 		// We are looking for "cpu cores	: 4 or whatever"
 		const char Searched[] = "cores";
 
-		char C, SI;
+		U8 C, SI;
 		bool TotallyFound = false;
 		
 		while ((C = fgetc(F)) != EOF) {
@@ -53,7 +53,7 @@ namespace OAI {
 				C = getc(F);
 			} while (C < '0' || C > '9');
 
-			int I;
+			unsigned I;
 			for (I = 0; I < sizeof(StrCores)-1; I++) {
 				if (C < '0' || C > '9')
 					break;
@@ -202,6 +202,8 @@ namespace OAI {
 
 			UsageDeltaAvg = LogsN = 0;
 		}
+
+		return 1.0F;
 	}
 
 }

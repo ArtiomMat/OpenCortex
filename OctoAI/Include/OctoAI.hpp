@@ -17,28 +17,26 @@ namespace OAI {
 	typedef unsigned int U32;
 	typedef unsigned long long U64;
 
-	struct SFixed8 {
-		// N is how many 2's SFixed8::Q is divided by to get the actual value of the fixed number, e.g. N=2,Q=3 <-> Value=3/2**2 = 3/4 = 0.75
+	struct F8 {
+		// N is how many 2's F8::Q is divided by to get the actual value of the fixed number, e.g. N=2,Q=3 <-> Value=3/2**2 = 3/4 = 0.75
 		// So the smaller N is, the more percise the whole number can be.
 		// Average ratio between performance of variable and non variable N is approx. 14/13. The performance difference is minimal, and coming at the advantage of defining your own N.
 		static int N;
 		I8 Q;
 
-		SFixed8() {}
-		SFixed8(I8 X);
+		F8() {}
+		F8(I8 X);
 		
-		SFixed8& operator=(I8 X);
+		F8& operator=(I8 X);
 
-		SFixed8 operator+(SFixed8& O);
-		SFixed8& operator+=(SFixed8 O);
+		F8 operator+(F8& O);
+		F8& operator+=(F8 O);
 		
-		SFixed8 operator*(SFixed8& O);
-		SFixed8& operator*=(SFixed8& O);
+		F8 operator*(F8& O);
+		F8& operator*=(F8& O);
 
 		float ToFloat();
 	};
-
-	typedef SFixed8 DataUnit;
 
 	class Map {
 		public:
@@ -94,7 +92,7 @@ namespace OAI {
 	class Model {
 		public:
 		virtual void Run(Map* Maps, int MapsN) = 0;
-		virtual void Run(SFixed8* Arr, SFixed8* Output) = 0;
+		virtual void Run(F8* Arr, F8* Output) = 0;
 	};
 
 	enum Activation {
@@ -120,31 +118,31 @@ namespace OAI {
 			public:
 			unsigned TWI = 0, TNI = 0;
 
-			char FedBufI = 1;
-			SFixed8* Bufs[2];
+			U8 FedBufI = 1;
+			F8* Bufs[2];
 
 			RunState(int BigLayerNeuronsN);
 			~RunState();
 
 			private:
-			SFixed8* EntireBuf;
+			F8* EntireBuf;
 		};
 
 		struct Neuron {
-			SFixed8 Bias;
+			F8 Bias;
 		}* Neurons;
 
 		struct Wire {
-			SFixed8 Weight;
+			F8 Weight;
 		}* Wires;
 
-		int InputUnitsN;
-		int BigLayerI;
+		unsigned InputUnitsN;
+		unsigned BigLayerI;
 
 		Layer* Layers;
-		int LayersN;
+		unsigned LayersN;
 
-		void Activate(SFixed8& V, int Func);
+		void Activate(F8& V, int Func);
 		
 		void RunLayer(RunState& State, int LI, int PrevNeuronsN);
 		void RunChunk(RunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN);
@@ -155,16 +153,16 @@ namespace OAI {
 		~NeuronsModel();
 
 		void Run(Map* Maps, int MapsN);
-		void Run(SFixed8* Input, SFixed8* Output);
+		void Run(F8* Input, F8* Output);
 
 		struct FitnessGuider {
-			char* BackupDir = "_Backup";
+			const char* BackupDir = "_Backup";
 			// 0 for no backup, not recommended.
 			// Backup the model every BackupInterval batches.
 			U16 BackupInterval = 5;
 			U16 BatchSize; 
 
-			virtual void GetNextSample(SFixed8* Input, SFixed8* Output) = 0;
+			virtual void GetNextSample(F8* Input, F8* Output) = 0;
 		};
 
 		void Fit(Map* Maps, int MapsN);
@@ -179,7 +177,7 @@ namespace OAI {
 		
 	};
 
-	void SetRngSeed(long long seed);
-	int Rng(void);
+	extern void SetRngSeed(long long seed);
+	extern int Rng(void);
 }
 

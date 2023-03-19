@@ -1,55 +1,14 @@
 #include <math.h>
 #include <string.h>
 
-#include "OctoAI.hpp"
-#include "OctoAI_Threads.hpp"
+#include "../Include/OctoAI.hpp"
+#include "Threads.hpp"
 
 namespace OAI {
 	const NeuronsModel::Layer NeuronsModel::NullLayer{0};
-	int SFixed8::N = 0;
-
-	float SFixed8::ToFloat() {
-		return ((float)Q)/(1<<N);
-	}
-
-	SFixed8::SFixed8(I8 X) {
-		Q = X;
-	}
-	SFixed8& SFixed8::operator=(I8 X) {
-		Q = X;
-		return *this;
-	}
-	
-	SFixed8 SFixed8::operator+(SFixed8& O) {
-		return SFixed8(Q + O.Q);
-	}
-	SFixed8& SFixed8::operator+=(SFixed8 O) {
-		Q += O.Q;
-		return *this;
-	}
-	
-	SFixed8 SFixed8::operator*(SFixed8& O) {
-		printf("\n%f*%f=", ToFloat(), O.ToFloat());
-		printf("%f\n", SFixed8((Q * O.Q) >> N).ToFloat());
-		return SFixed8((Q * O.Q) >> N);
-	}
-	SFixed8& SFixed8::operator*=(SFixed8& O) {
-		Q = (Q * O.Q) >> N;
-		return *this;
-	}
-
-	static long long RngSeed = 1;
-	void SetRngSeed(long long seed) {
-		RngSeed = seed;
-	}
-	// Good luck getting repeating values out of this
-	int Rng(void) {
-		RngSeed = (RngSeed * 0x2051064DE3) >> 32;
-		return (int)RngSeed;
-	}
 
 	NeuronsModel::RunState::RunState(int BigLayerNeuronsN) {
-		EntireBuf = new SFixed8 [BigLayerNeuronsN * 2];
+		EntireBuf = new F8 [BigLayerNeuronsN * 2];
 		
 		Bufs[0] = EntireBuf;
 		Bufs[1] = Bufs[0] + BigLayerNeuronsN;
@@ -84,15 +43,15 @@ namespace OAI {
 		Layers = new Layer [LayersN];
 
 		// Now setup all the layers
-		for (int I = 0; I < LayersN; I++)
+		for (unsigned I = 0; I < LayersN; I++)
 			Layers[I] = L[I];
 		puts("Weights:");
-		for (int I = 0; I < TotalWires; I++) {
+		for (unsigned I = 0; I < TotalWires; I++) {
 			Wires[I].Weight = rand() % 2;
 			printf("%f, ", Wires[I].Weight.ToFloat());
 		}
 		puts("\nBiases:");
-		for (int I = 0; I < TotalNeurons; I++) {
+		for (unsigned I = 0; I < TotalNeurons; I++) {
 			Neurons[I].Bias = rand() % 2;
 			printf("%f, ", Neurons[I].Bias.ToFloat());
 		}
@@ -106,8 +65,8 @@ namespace OAI {
 		delete [] Layers;
 	}
 
-	static SFixed8 _LeakyRELU_M = 1; // Essentially get the minimum value.
-	void NeuronsModel::Activate(SFixed8& V, int Func) {
+	static F8 _LeakyRELU_M = 1; // Essentially get the minimum value.
+	void NeuronsModel::Activate(F8& V, int Func) {
 		switch (Func) {
 			case RELU:
 			if (V.Q < 0)
@@ -155,7 +114,7 @@ namespace OAI {
 		State.FedBufI = !State.FedBufI; // Swap buffers
 	}
 
-	void NeuronsModel::Run(SFixed8* Arr, SFixed8* Output) {
+	void NeuronsModel::Run(F8* Arr, F8* Output) {
 		RunState State(Layers[BigLayerI].NeuronsN);
 
 		// Run first layer, first copy the input array
@@ -163,14 +122,14 @@ namespace OAI {
 		RunLayer(State, 0, InputUnitsN);
 
 		// Run the rest of the layers
-		for (int LI = 1; LI < LayersN; LI++)
+		for (unsigned LI = 1; LI < LayersN; LI++)
 			RunLayer(State, LI, Layers[LI-1].NeuronsN);
 
 		memcpy(Output, State.Bufs[!State.FedBufI], Layers[LayersN-1].NeuronsN);
 	}
 
 	void NeuronsModel::Run(Map* Maps, int MapsN) {
-		SFixed8* Arr = new SFixed8[InputUnitsN];
+		F8* Arr = new F8[InputUnitsN];
 		int Offset = 0;
 
 		// First we get the size of the array
@@ -193,27 +152,4 @@ namespace OAI {
 		
 		return Bytes/1000000;
 	}
-}
-
-#include <time.h>
-
-int main() {
-	
-	// OAI::SFixed8::N = 4;
-
-	OAI::NeuronsModel::Layer L[] = 
-	{
-		OAI::NeuronsModel::Layer{2, OAI::LeakyRELU},
-		OAI::NeuronsModel::Layer{1, OAI::LeakyRELU},
-		OAI::NeuronsModel::NullLayer
-	};
-
-	OAI::NeuronsModel M(2, L);
-	OAI::SFixed8 Input[] = {2<<1,2<<2};
-	OAI::SFixed8 Output[1];
-	M.Run(Input, Output);
-
-	printf("%f\n", Output[0].ToFloat());
-
-	return 0;
 }
