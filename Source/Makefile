@@ -11,7 +11,7 @@ Objects=Main.o
 %.o: %.cpp
 	$(C) $(Flags) -c -o $@ $^
 
-$(ODir)/Server: $(Objects)
+$(ODir)/Server.o: $(Objects)
 	cd ../OctoAI/Source/ &&\
 	make &&\
 	cp ../libOctoAI.so ../../libOctoAI.so\

@@ -65,8 +65,9 @@ namespace OAI {
 		delete [] Layers;
 	}
 
-	static F8 _LeakyRELU_M = 1; // Essentially get the minimum value.
 	void NeuronsModel::Activate(F8& V, int Func) {
+		static F8 LeakyRELU_M = 1; // The smallest possible F8 value.
+		
 		switch (Func) {
 			case RELU:
 			if (V.Q < 0)
@@ -76,7 +77,7 @@ namespace OAI {
 			case LeakyRELU:
 			if (V.Q < 0) {
 				printf("\n\nDUDE: %f\n\n", V.ToFloat());
-				V *= _LeakyRELU_M;
+				V *= LeakyRELU_M;
 			}
 			break;
 		}
@@ -85,7 +86,7 @@ namespace OAI {
 	void NeuronsModel::RunChunk(RunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN) {
 		// Since we skip the FirstI layers we create a localTWI that later is added to the global TWI after running all the chunks
 		unsigned LocalTWI = State.TWI + (PrevNeuronsN * FirstI);
-
+	
 		for (int RNI = FirstI; RNI <= LastI; RNI++) {
 			int NI = RNI + State.TNI;
 			State.Bufs[State.FedBufI][RNI] = 0;
