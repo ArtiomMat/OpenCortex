@@ -1,12 +1,12 @@
 OS=_Linux
 
 IDir=../Include
-LDir =./
+LDir=./
 ODir=../
 
 C=g++
-Flags =-Wall -Werror -fPIC -L$(LDir) -I$(IDir)
-Libs =-lm
+Flags=-Wall -Werror -fPIC -L$(LDir) -I$(IDir)
+Libs=-lm
 
 Objects=Main.o Fixed$(OS).o NeuronsModel.o Threads$(OS).o
 

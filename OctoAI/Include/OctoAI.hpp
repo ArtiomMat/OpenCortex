@@ -7,15 +7,15 @@
 #endif
 
 namespace OAI {
-	typedef char I8;
-	typedef short I16;
-	typedef int I32;
-	typedef long long I64;
+	typedef __int8_t I8;
+	typedef __int16_t I16;
+	typedef __int32_t I32;
+	typedef __int64_t I64;
 
-	typedef unsigned char U8;
-	typedef unsigned short U16;
-	typedef unsigned int U32;
-	typedef unsigned long long U64;
+	typedef __uint8_t U8;
+	typedef __uint16_t U16;
+	typedef __uint32_t U32;
+	typedef __uint64_t U64;
 
 	struct F8 {
 		// N is how many 2's F8::Q is divided by to get the actual value of the fixed number, e.g. N=2,Q=3 <-> Value=3/2**2 = 3/4 = 0.75
@@ -25,15 +25,48 @@ namespace OAI {
 		I8 Q;
 
 		F8() {}
-		F8(I8 X);
+		inline F8(I8 X) {
+			Q = X;
+		}
 		
-		F8& operator=(I8 X);
+		// Do X<<N to get X.0, otherwise X represents the internal quotient.
+		// F8& operator=(I8 X);
 
-		F8 operator+(F8& O);
-		F8& operator+=(F8 O);
+		inline F8& operator=(I8 X) {
+			Q = X;
+			return *this;
+		}
 		
-		F8 operator*(F8& O);
-		F8& operator*=(F8& O);
+		inline F8 operator+(F8& O) {
+			return F8(Q + O.Q);
+		}
+		inline F8& operator+=(F8 O) {
+			Q += O.Q;
+			return *this;
+		}
+		inline F8 operator-(F8& O) {
+			return F8(Q - O.Q);
+		}
+		inline F8& operator-=(F8 O) {
+			Q -= O.Q;
+			return *this;
+		}
+				// printf("\n%f*%f=", ToFloat(), O.ToFloat());
+			// printf("%f\n", F8((Q * O.Q) >> N).ToFloat());
+		inline F8 operator*(F8& O) {
+			return F8((Q * O.Q) >> N);
+		}
+		inline F8& operator*=(F8& O) {
+			Q = (Q * O.Q) >> N;
+			return *this;
+		}
+		inline F8 operator/(F8& O) {
+			return F8((Q / O.Q) >> N);
+		}
+		inline F8& operator/=(F8& O) {
+			Q = (Q / O.Q) >> N;
+			return *this;
+		}
 
 		float ToFloat();
 	};
@@ -91,6 +124,9 @@ namespace OAI {
 	
 	class Model {
 		public:
+		virtual bool Load(const char* FP) = 0;
+		virtual bool Save(const char* FP) = 0;
+
 		virtual void Run(Map* Maps, int MapsN) = 0;
 		virtual void Run(F8* Arr, F8* Output) = 0;
 	};
@@ -147,10 +183,14 @@ namespace OAI {
 		void RunLayer(RunState& State, int LI, int PrevNeuronsN);
 		void RunChunk(RunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN);
 		public:
+		// NeuronsModel(const char* FP);
 		// Input sources include both raw inputs and model outputs as inputs.
 		// L is terminated with NeuronsModel::NullLayer (NeuronsN = 0)
 		NeuronsModel(int InputUnitsN, Layer* L);
 		~NeuronsModel();
+
+		// bool Load(const char* FP);
+		// bool Save(const char* FP);
 
 		void Run(Map* Maps, int MapsN);
 		void Run(F8* Input, F8* Output);
@@ -160,13 +200,19 @@ namespace OAI {
 			// 0 for no backup, not recommended.
 			// Backup the model every BackupInterval batches.
 			U16 BackupInterval = 5;
-			U16 BatchSize; 
+			U16 BatchSize;
+
+			// 0 to skip and only use MinAvgCost
+			U16 MaxEpochsN = 0;
+			float MinAvgCost = 0.1F;
+
+			float Rate = 0.1F;
+			bool AutoRate = true;
 
 			virtual void GetNextSample(F8* Input, F8* Output) = 0;
 		};
 
-		void Fit(Map* Maps, int MapsN);
-		void Fit(U8* Arr);
+		void Fit(FitnessGuider& Guider);
 
 		// LayersNeurons is 0 terminated.
 		// Returns the major part of memory needed in MB, the minor part is less than a single MB so no reason to add it.

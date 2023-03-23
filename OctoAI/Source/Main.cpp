@@ -11,6 +11,4 @@ namespace OAI {
 		RngSeed = (RngSeed * 0x2051064DE3) >> 32;
 		return (int)RngSeed;
 	}
-
-
 }

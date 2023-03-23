@@ -153,4 +153,49 @@ namespace OAI {
 		
 		return Bytes/1000000;
 	}
+
+	void NeuronsModel::Fit(FitnessGuider& Guider) {
+		RunState State(Layers[BigLayerI].NeuronsN);
+		unsigned OutputSize = Layers[LayersN-1].NeuronsN;
+		F8* WantedOutput = new F8[OutputSize];
+		F8* Output = nullptr;
+		struct {
+			U8 AddedElementsN; // How many elements are inside Added
+			F8 Added; // The added value to the sum;
+			F8 Average;
+		} OutputCostAvgs;
+
+		// Epochs
+		while (1) {
+			// Batch samples
+			for (int SampleI = 0; SampleI < Guider.BatchSize; SampleI++) {
+				Guider.GetNextSample(State.Bufs[!State.FedBufI], WantedOutput);
+				// Run first layer
+				RunLayer(State, 0, InputUnitsN);
+				// Run the rest of the layers
+				for (unsigned LI = 1; LI < LayersN; LI++)
+					RunLayer(State, LI, Layers[LI-1].NeuronsN);
+
+				Output = State.Bufs[!State.FedBufI];
+
+
+				for (unsigned I = 0; I < OutputSize; I++) {
+					F8 Cost = (Output[I] - WantedOutput[I]);
+					Cost *= Cost;
+				}
+			}
+			// The epoch logic, no worries about it.
+			if (Guider.MaxEpochsN) {
+				static unsigned EpochI = 1;
+				if (EpochI > Guider.MaxEpochsN)
+					break;
+				EpochI++;
+			}
+			
+
+
+			// Calculate cost per neuron
+		}
+		delete [] WantedOutput;
+	}
 }
