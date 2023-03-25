@@ -169,7 +169,7 @@ namespace OAI {
 		while (1) {
 			// Batch samples
 			for (int SampleI = 0; SampleI < Guider.BatchSize; SampleI++) {
-				Guider.GetNextSample(State.Bufs[!State.FedBufI], WantedOutput);
+				Guider.OnNextSample(State.Bufs[!State.FedBufI], WantedOutput);
 				// Run first layer
 				RunLayer(State, 0, InputUnitsN);
 				// Run the rest of the layers

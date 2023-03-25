@@ -32,44 +32,110 @@ namespace OAI {
 		// Do X<<N to get X.0, otherwise X represents the internal quotient.
 		// F8& operator=(I8 X);
 
+		inline bool operator!() {
+			return !Q;
+		}
+
 		inline F8& operator=(I8 X) {
 			Q = X;
 			return *this;
 		}
 		
+		inline static void CheckExQ(I16& ExQ) {
+			if (ExQ > 127)
+				ExQ = 127;
+			else if (ExQ < -128)
+				ExQ = -128;
+		}
+
+		// TODO: Make it use JS and JO jump instructions instead.
 		inline F8 operator+(F8& O) {
-			return F8(Q + O.Q);
+			I16 ExQ = Q;
+
+			ExQ += O.Q;
+
+			CheckExQ(ExQ);
+
+			return F8(ExQ);
 		}
 		inline F8& operator+=(F8 O) {
-			Q += O.Q;
+			I16 ExQ = Q;
+
+			ExQ += O.Q;
+
+			CheckExQ(ExQ);
+
+			Q = ExQ;
 			return *this;
 		}
 		inline F8 operator-(F8& O) {
-			return F8(Q - O.Q);
+			I16 ExQ = Q;
+
+			ExQ -= O.Q;
+
+			CheckExQ(ExQ);
+
+			return F8(ExQ);
 		}
 		inline F8& operator-=(F8 O) {
-			Q -= O.Q;
+			I16 ExQ = Q;
+
+			ExQ -= O.Q;
+			
+			CheckExQ(ExQ);
+
+			Q = ExQ;
 			return *this;
 		}
 				// printf("\n%f*%f=", ToFloat(), O.ToFloat());
 			// printf("%f\n", F8((Q * O.Q) >> N).ToFloat());
 		inline F8 operator*(F8& O) {
-			return F8((Q * O.Q) >> N);
+			I16 ExQ = Q;
+
+			ExQ *= O.Q;
+			ExQ >>= N;
+			
+			CheckExQ(ExQ);
+
+			return F8(ExQ);
 		}
 		inline F8& operator*=(F8& O) {
-			Q = (Q * O.Q) >> N;
+			I16 ExQ = Q;
+
+			ExQ *= O.Q;
+			ExQ >>= N;
+			
+			CheckExQ(ExQ);
+
+			Q = ExQ;
 			return *this;
 		}
 		inline F8 operator/(F8& O) {
-			return F8((Q / O.Q) >> N);
+			I16 ExQ = Q;
+
+			ExQ <<= N;
+			ExQ /= O.Q;
+			
+			CheckExQ(ExQ);
+
+			return F8(ExQ);
 		}
 		inline F8& operator/=(F8& O) {
-			Q = (Q / O.Q) >> N;
+			I16 ExQ = Q;
+
+			ExQ <<= N;
+			ExQ /= O.Q;
+
+			CheckExQ(ExQ);
+
+			Q = ExQ;
 			return *this;
 		}
 
 		float ToFloat();
+
 	};
+
 
 	class Map {
 		public:
@@ -200,7 +266,7 @@ namespace OAI {
 			// 0 for no backup, not recommended.
 			// Backup the model every BackupInterval batches.
 			U16 BackupInterval = 5;
-			U16 BatchSize;
+			U16 BatchSize = 6;
 
 			// 0 to skip and only use MinAvgCost
 			U16 MaxEpochsN = 0;
@@ -209,7 +275,12 @@ namespace OAI {
 			float Rate = 0.1F;
 			bool AutoRate = true;
 
-			virtual void GetNextSample(F8* Input, F8* Output) = 0;
+			struct EpochState {
+				F8 AvgCost;
+			};
+
+			void (*OnNextSample) (F8* Input, F8* DesiredOutput) = nullptr;
+			void (*OnEpoch) (EpochState& EpochState);
 		};
 
 		void Fit(FitnessGuider& Guider);

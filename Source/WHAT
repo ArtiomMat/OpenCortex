@@ -1,0 +1,354 @@
+	.file	"Main.cpp"
+	.text
+	.section	.text._ZN3OAI2F8C2Ev,"axG",@progbits,_ZN3OAI2F8C5Ev,comdat
+	.align 2
+	.weak	_ZN3OAI2F8C2Ev
+	.type	_ZN3OAI2F8C2Ev, @function
+_ZN3OAI2F8C2Ev:
+.LFB1:
+	.cfi_startproc
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	movq	%rdi, -8(%rbp)
+	nop
+	popq	%rbp
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE1:
+	.size	_ZN3OAI2F8C2Ev, .-_ZN3OAI2F8C2Ev
+	.weak	_ZN3OAI2F8C1Ev
+	.set	_ZN3OAI2F8C1Ev,_ZN3OAI2F8C2Ev
+	.section	.text._ZN3OAI2F8ntEv,"axG",@progbits,_ZN3OAI2F8ntEv,comdat
+	.align 2
+	.weak	_ZN3OAI2F8ntEv
+	.type	_ZN3OAI2F8ntEv, @function
+_ZN3OAI2F8ntEv:
+.LFB6:
+	.cfi_startproc
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movzbl	(%rax), %eax
+	testb	%al, %al
+	sete	%al
+	popq	%rbp
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE6:
+	.size	_ZN3OAI2F8ntEv, .-_ZN3OAI2F8ntEv
+	.section	.text._ZN3OAI2F8aSEa,"axG",@progbits,_ZN3OAI2F8aSEa,comdat
+	.align 2
+	.weak	_ZN3OAI2F8aSEa
+	.type	_ZN3OAI2F8aSEa, @function
+_ZN3OAI2F8aSEa:
+.LFB7:
+	.cfi_startproc
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	movq	%rdi, -8(%rbp)
+	movl	%esi, %eax
+	movb	%al, -12(%rbp)
+	movq	-8(%rbp), %rax
+	movzbl	-12(%rbp), %edx
+	movb	%dl, (%rax)
+	movq	-8(%rbp), %rax
+	popq	%rbp
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE7:
+	.size	_ZN3OAI2F8aSEa, .-_ZN3OAI2F8aSEa
+	.section	.text._ZN3OAI2F88CheckExQERs,"axG",@progbits,_ZN3OAI2F88CheckExQERs,comdat
+	.weak	_ZN3OAI2F88CheckExQERs
+	.type	_ZN3OAI2F88CheckExQERs, @function
+_ZN3OAI2F88CheckExQERs:
+.LFB8:
+	.cfi_startproc
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movzwl	(%rax), %eax
+	cmpw	$127, %ax
+	jle	.L7
+	movq	-8(%rbp), %rax
+	movw	$127, (%rax)
+	jmp	.L9
+.L7:
+	movq	-8(%rbp), %rax
+	movzwl	(%rax), %eax
+	cmpw	$-128, %ax
+	jge	.L9
+	movq	-8(%rbp), %rax
+	movw	$-128, (%rax)
+.L9:
+	nop
+	popq	%rbp
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE8:
+	.size	_ZN3OAI2F88CheckExQERs, .-_ZN3OAI2F88CheckExQERs
+	.section	.text._ZN3OAI2F8dVERS0_,"axG",@progbits,_ZN3OAI2F8dVERS0_,comdat
+	.align 2
+	.weak	_ZN3OAI2F8dVERS0_
+	.type	_ZN3OAI2F8dVERS0_, @function
+_ZN3OAI2F8dVERS0_:
+.LFB16:
+	.cfi_startproc
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$32, %rsp
+	movq	%rdi, -24(%rbp)
+	movq	%rsi, -32(%rbp)
+	movq	-24(%rbp), %rax
+	movzbl	(%rax), %eax
+	cbtw
+	movw	%ax, -2(%rbp)
+	movzwl	-2(%rbp), %eax
+	movswl	%ax, %edx
+	movq	_ZN3OAI2F81NE@GOTPCREL(%rip), %rax
+	movl	(%rax), %eax
+	movl	%eax, %ecx
+	sall	%cl, %edx
+	movl	%edx, %eax
+	movw	%ax, -2(%rbp)
+	movzwl	-2(%rbp), %eax
+	cwtl
+	movq	-32(%rbp), %rdx
+	movzbl	(%rdx), %edx
+	movsbl	%dl, %esi
+	cltd
+	idivl	%esi
+	movw	%ax, -2(%rbp)
+	leaq	-2(%rbp), %rax
+	movq	%rax, %rdi
+	call	_ZN3OAI2F88CheckExQERs@PLT
+	movzwl	-2(%rbp), %eax
+	movl	%eax, %edx
+	movq	-24(%rbp), %rax
+	movb	%dl, (%rax)
+	movq	-24(%rbp), %rax
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE16:
+	.size	_ZN3OAI2F8dVERS0_, .-_ZN3OAI2F8dVERS0_
+	.text
+	.globl	_Z6TestF8j
+	.type	_Z6TestF8j, @function
+_Z6TestF8j:
+.LFB17:
+	.cfi_startproc
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$64, %rsp
+	movl	%edi, -52(%rbp)
+	leaq	-24(%rbp), %rax
+	movq	%rax, %rdi
+	call	time@PLT
+	leaq	-33(%rbp), %rax
+	movq	%rax, %rdi
+	call	_ZN3OAI2F8C1Ev@PLT
+	leaq	-34(%rbp), %rax
+	movq	%rax, %rdi
+	call	_ZN3OAI2F8C1Ev@PLT
+	movl	$0, -4(%rbp)
+	jmp	.L13
+.L16:
+	call	_ZN3OAI3RngEv@PLT
+	movsbl	%al, %edx
+	leaq	-33(%rbp), %rax
+	movl	%edx, %esi
+	movq	%rax, %rdi
+	call	_ZN3OAI2F8aSEa@PLT
+	call	_ZN3OAI3RngEv@PLT
+	movsbl	%al, %edx
+	leaq	-34(%rbp), %rax
+	movl	%edx, %esi
+	movq	%rax, %rdi
+	call	_ZN3OAI2F8aSEa@PLT
+	leaq	-34(%rbp), %rax
+	movq	%rax, %rdi
+	call	_ZN3OAI2F8ntEv@PLT
+	testb	%al, %al
+	jne	.L18
+	leaq	-34(%rbp), %rdx
+	leaq	-33(%rbp), %rax
+	movq	%rdx, %rsi
+	movq	%rax, %rdi
+	call	_ZN3OAI2F8dVERS0_@PLT
+	jmp	.L15
+.L18:
+	nop
+.L15:
+	addl	$1, -4(%rbp)
+.L13:
+	movl	-4(%rbp), %eax
+	cmpl	-52(%rbp), %eax
+	jb	.L16
+	leaq	-32(%rbp), %rax
+	movq	%rax, %rdi
+	call	time@PLT
+	movq	-24(%rbp), %rdx
+	movq	-32(%rbp), %rax
+	movq	%rdx, %rsi
+	movq	%rax, %rdi
+	call	difftime@PLT
+	movq	%xmm0, %rax
+	movq	%rax, -16(%rbp)
+	movsd	-16(%rbp), %xmm0
+	movq	%xmm0, %rax
+	movq	%rax, %xmm0
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE17:
+	.size	_Z6TestF8j, .-_Z6TestF8j
+	.globl	_Z9TestFloatj
+	.type	_Z9TestFloatj, @function
+_Z9TestFloatj:
+.LFB18:
+	.cfi_startproc
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$64, %rsp
+	movl	%edi, -52(%rbp)
+	leaq	-40(%rbp), %rax
+	movq	%rax, %rdi
+	call	time@PLT
+	movl	$0, -4(%rbp)
+	jmp	.L20
+.L24:
+	call	_ZN3OAI3RngEv@PLT
+	movslq	%eax, %rdx
+	imulq	$1759218605, %rdx, %rdx
+	shrq	$32, %rdx
+	sarl	$12, %edx
+	movl	%eax, %ecx
+	sarl	$31, %ecx
+	subl	%ecx, %edx
+	imull	$10000, %edx, %ecx
+	subl	%ecx, %eax
+	movl	%eax, %edx
+	pxor	%xmm0, %xmm0
+	cvtsi2sdl	%edx, %xmm0
+	movsd	.LC0(%rip), %xmm1
+	divsd	%xmm1, %xmm0
+	movsd	%xmm0, -24(%rbp)
+	call	_ZN3OAI3RngEv@PLT
+	movslq	%eax, %rdx
+	imulq	$1759218605, %rdx, %rdx
+	shrq	$32, %rdx
+	sarl	$12, %edx
+	movl	%eax, %ecx
+	sarl	$31, %ecx
+	subl	%ecx, %edx
+	imull	$10000, %edx, %ecx
+	subl	%ecx, %eax
+	movl	%eax, %edx
+	pxor	%xmm0, %xmm0
+	cvtsi2sdl	%edx, %xmm0
+	movsd	.LC0(%rip), %xmm1
+	divsd	%xmm1, %xmm0
+	movsd	%xmm0, -32(%rbp)
+	pxor	%xmm0, %xmm0
+	ucomisd	-32(%rbp), %xmm0
+	jp	.L21
+	pxor	%xmm0, %xmm0
+	ucomisd	-32(%rbp), %xmm0
+	je	.L26
+.L21:
+	movsd	-24(%rbp), %xmm0
+	divsd	-32(%rbp), %xmm0
+	movsd	%xmm0, -24(%rbp)
+	jmp	.L23
+.L26:
+	nop
+.L23:
+	addl	$1, -4(%rbp)
+.L20:
+	movl	-4(%rbp), %eax
+	cmpl	-52(%rbp), %eax
+	jb	.L24
+	leaq	-48(%rbp), %rax
+	movq	%rax, %rdi
+	call	time@PLT
+	movq	-40(%rbp), %rdx
+	movq	-48(%rbp), %rax
+	movq	%rdx, %rsi
+	movq	%rax, %rdi
+	call	difftime@PLT
+	movq	%xmm0, %rax
+	movq	%rax, -16(%rbp)
+	movsd	-16(%rbp), %xmm0
+	movq	%xmm0, %rax
+	movq	%rax, %xmm0
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE18:
+	.size	_Z9TestFloatj, .-_Z9TestFloatj
+	.section	.rodata
+.LC2:
+	.string	"%lf\n"
+	.text
+	.globl	main
+	.type	main, @function
+main:
+.LFB19:
+	.cfi_startproc
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	movl	$150050000, %edi
+	call	_Z9TestFloatj@PLT
+	movq	%xmm0, %rax
+	movq	%rax, %xmm0
+	leaq	.LC2(%rip), %rax
+	movq	%rax, %rdi
+	movl	$1, %eax
+	call	printf@PLT
+	movl	$0, %eax
+	popq	%rbp
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE19:
+	.size	main, .-main
+	.section	.rodata
+	.align 8
+.LC0:
+	.long	0
+	.long	1082081280
+	.ident	"GCC: (GNU) 12.2.1 20221121 (Red Hat 12.2.1-4)"
+	.section	.note.GNU-stack,"",@progbits

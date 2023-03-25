@@ -38,21 +38,17 @@ inline void _OAI_F8_Mul(char& A, char B) {
 		"mov %0, %%al;"
 		"mov %1, %%bl;"
 		"imul %%bl;" // Stored in AX
-		"shr %2, %%ax;" // TODO: I am 69% sure we can check for overflow before we even shift and increase performance
-
-		// In multiplication and division there is a special overflow check since we don't use 8 bit registers.
-		"cmp $0, %%ah;"
-		"jz ._End;"
+		"sar %2, %%ax;" // TODO: I am 69% sure we can check for overflow before we even shift and increase performance
 		
-		// 2's complement means we are negative.
-		"and $0b10000000, %%ah;"
-		"cmp $0, %%ah;"
-		"jnz ._HaveSign;"
-		
-		"movb $-128, %%al;" /* If we don't have a sign we underflowed*/
+		"cmp $127, %%ax;"
+		"jle ._OtherCheck;"
+		"mov $127, %%al;"
 		"jmp ._End;"
-		
-		"._HaveSign: movb $127, %%al;" /* If we have sign we overflowed */
+
+		"._OtherCheck:"
+		"cmp $-128, %%ax;"
+		"jge ._End;"
+		"mov $-128, %%al;"
 
 		"._End:"
 		"mov %%al, %0"
@@ -61,13 +57,30 @@ inline void _OAI_F8_Mul(char& A, char B) {
 	);
 }
 
+inline void _OAI_F8_Div(char& A, char B) {
+	short D = A;
+	D <<= _OAI_N;
+	D /= B;
+	
+	if (D > 127)
+		D = 127;
+	else if (D < -128)
+		D = -128;
+	
+	A = D;
+}
 
 int main() {
-	char X = 3<<_OAI_N;
-	
-	_OAI_F8_Mul(X, 3<<_OAI_N);
+	char A = 7<<_OAI_N;
+	char B = 1<<(_OAI_N-3);
+	char X = A;
+	// char X = ((short)(A)<<_OAI_N) / B;
 
-	printf("%f\n", ((float)X)/(1<<_OAI_N));
+	_OAI_F8_Add(X, B);
+
+	printf("(%i # %i) = %i\n", A, B, X);
+
+	printf("(%f # %f) = %f\n", ((float)A)/(1<<_OAI_N), ((float)B)/(1<<_OAI_N), ((float)X)/(1<<_OAI_N));
 
 	return 0;
 }

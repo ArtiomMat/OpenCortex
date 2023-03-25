@@ -2,26 +2,73 @@
 
 #include "OctoAI.hpp"
 
+double TestF8(unsigned Iterations) {
+	time_t StartT, EndT;
+	double ElapsedT;
+
+	time(&StartT);
+
+	OAI::F8 A, B;
+
+	for (unsigned I = 0; I < Iterations; I++) {
+		A = OAI::Rng();
+		B = OAI::Rng();
+		if (!B)
+			continue;
+		A /= B;
+	}
+
+	time(&EndT);
+
+	ElapsedT = difftime(EndT, StartT);
+	return ElapsedT;
+}
+
+double TestFloat(unsigned Iterations) {
+	time_t StartT, EndT;
+	double ElapsedT;
+
+	time(&StartT);
+
+	float A, B;
+
+	for (unsigned I = 0; I < Iterations; I++) {
+		A = (float)(OAI::Rng()%10000)/500.0f;
+		B = (float)(OAI::Rng()%10000)/500.0f;
+		if (B == 0.0f)
+			continue;
+		A /= B;
+	}
+
+	time(&EndT);
+
+	ElapsedT = difftime(EndT, StartT);
+	return ElapsedT;
+}
+
 int main() {
 	// OAI::F8::N = 4;
-	
-	/*OAI::NeuronsModel::Layer L[] = 
-	{
-		OAI::NeuronsModel::Layer{2, OAI::LeakyRELU},
-		OAI::NeuronsModel::Layer{1, OAI::LeakyRELU},
-		OAI::NeuronsModel::NullLayer
-	};
 
-	OAI::NeuronsModel M(2, L);
-	OAI::F8 Input[] = {2<<1,2<<2};
-	OAI::F8 Output[1];
-	M.Run(Input, Output);*/
+	// OAI::F8 A, B;
 
-	// _Float16 A = 2, B = 1.55;
+	// for (unsigned I = 0; I < 166666650; I++) {
+	// 	A = OAI::Rng();
+	// 	B = OAI::Rng();
+		
+	// 	printf("A = %f\nB = %f\n\n", A.ToFloat(), B.ToFloat());
+	// 	fflush(stdout);
 
-	OAI::F8 A = -1<<(OAI::F8::N+1), B = 2<<(OAI::F8::N);
+	// 	OAI::I16 ExQ = A.Q;
 
-	printf("%f\n", (A*B).ToFloat());
+	// 	ExQ <<= OAI::F8::N;
+	// 	ExQ /= B.Q;
+
+	// 	OAI::F8::CheckExQ(ExQ);
+
+	// 	A.Q = ExQ;
+	// }
+
+	printf("%lf\n", TestFloat(150050000));
 
 	return 0;
 }

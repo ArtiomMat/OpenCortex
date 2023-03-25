@@ -6,6 +6,5 @@ namespace OAI {
 	float F8::ToFloat() {
 		return ((float)Q)/(1<<N);
 	}
-
 	
 }
