@@ -240,7 +240,7 @@ _Z9TestFloatj:
 	.cfi_def_cfa_register 6
 	subq	$64, %rsp
 	movl	%edi, -52(%rbp)
-	leaq	-40(%rbp), %rax
+	leaq	-32(%rbp), %rax
 	movq	%rax, %rdi
 	call	time@PLT
 	movl	$0, -4(%rbp)
@@ -258,10 +258,10 @@ _Z9TestFloatj:
 	subl	%ecx, %eax
 	movl	%eax, %edx
 	pxor	%xmm0, %xmm0
-	cvtsi2sdl	%edx, %xmm0
-	movsd	.LC0(%rip), %xmm1
-	divsd	%xmm1, %xmm0
-	movsd	%xmm0, -24(%rbp)
+	cvtsi2ssl	%edx, %xmm0
+	movss	.LC0(%rip), %xmm1
+	divss	%xmm1, %xmm0
+	movss	%xmm0, -20(%rbp)
 	call	_ZN3OAI3RngEv@PLT
 	movslq	%eax, %rdx
 	imulq	$1759218605, %rdx, %rdx
@@ -274,20 +274,20 @@ _Z9TestFloatj:
 	subl	%ecx, %eax
 	movl	%eax, %edx
 	pxor	%xmm0, %xmm0
-	cvtsi2sdl	%edx, %xmm0
-	movsd	.LC0(%rip), %xmm1
-	divsd	%xmm1, %xmm0
-	movsd	%xmm0, -32(%rbp)
+	cvtsi2ssl	%edx, %xmm0
+	movss	.LC0(%rip), %xmm1
+	divss	%xmm1, %xmm0
+	movss	%xmm0, -24(%rbp)
 	pxor	%xmm0, %xmm0
-	ucomisd	-32(%rbp), %xmm0
+	ucomiss	-24(%rbp), %xmm0
 	jp	.L21
 	pxor	%xmm0, %xmm0
-	ucomisd	-32(%rbp), %xmm0
+	ucomiss	-24(%rbp), %xmm0
 	je	.L26
 .L21:
-	movsd	-24(%rbp), %xmm0
-	divsd	-32(%rbp), %xmm0
-	movsd	%xmm0, -24(%rbp)
+	movss	-20(%rbp), %xmm0
+	divss	-24(%rbp), %xmm0
+	movss	%xmm0, -20(%rbp)
 	jmp	.L23
 .L26:
 	nop
@@ -297,11 +297,11 @@ _Z9TestFloatj:
 	movl	-4(%rbp), %eax
 	cmpl	-52(%rbp), %eax
 	jb	.L24
-	leaq	-48(%rbp), %rax
+	leaq	-40(%rbp), %rax
 	movq	%rax, %rdi
 	call	time@PLT
-	movq	-40(%rbp), %rdx
-	movq	-48(%rbp), %rax
+	movq	-32(%rbp), %rdx
+	movq	-40(%rbp), %rax
 	movq	%rdx, %rsi
 	movq	%rax, %rdi
 	call	difftime@PLT
@@ -316,10 +316,6 @@ _Z9TestFloatj:
 	.cfi_endproc
 .LFE18:
 	.size	_Z9TestFloatj, .-_Z9TestFloatj
-	.section	.rodata
-.LC2:
-	.string	"%lf\n"
-	.text
 	.globl	main
 	.type	main, @function
 main:
@@ -330,14 +326,20 @@ main:
 	.cfi_offset 6, -16
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register 6
-	movl	$150050000, %edi
-	call	_Z9TestFloatj@PLT
-	movq	%xmm0, %rax
-	movq	%rax, %xmm0
-	leaq	.LC2(%rip), %rax
-	movq	%rax, %rdi
-	movl	$1, %eax
-	call	printf@PLT
+	movl	$1, %edi
+	call	_ZN3OAI2F84SetNEi@PLT
+	movl	$2, %edi
+	call	_ZN3OAI2F84SetNEi@PLT
+	movl	$3, %edi
+	call	_ZN3OAI2F84SetNEi@PLT
+	movl	$4, %edi
+	call	_ZN3OAI2F84SetNEi@PLT
+	movl	$5, %edi
+	call	_ZN3OAI2F84SetNEi@PLT
+	movl	$6, %edi
+	call	_ZN3OAI2F84SetNEi@PLT
+	movl	$7, %edi
+	call	_ZN3OAI2F84SetNEi@PLT
 	movl	$0, %eax
 	popq	%rbp
 	.cfi_def_cfa 7, 8
@@ -346,9 +348,8 @@ main:
 .LFE19:
 	.size	main, .-main
 	.section	.rodata
-	.align 8
+	.align 4
 .LC0:
-	.long	0
-	.long	1082081280
+	.long	1140457472
 	.ident	"GCC: (GNU) 12.2.1 20221121 (Red Hat 12.2.1-4)"
 	.section	.note.GNU-stack,"",@progbits

@@ -68,7 +68,13 @@ int main() {
 	// 	A.Q = ExQ;
 	// }
 
-	printf("%lf\n", TestFloat(150050000));
+	OAI::F8::SetN(1);
+	OAI::F8::SetN(2);
+	OAI::F8::SetN(3);
+	OAI::F8::SetN(4);
+	OAI::F8::SetN(5);
+	OAI::F8::SetN(6);
+	OAI::F8::SetN(7);
 
 	return 0;
 }
