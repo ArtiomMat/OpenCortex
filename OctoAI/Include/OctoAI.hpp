@@ -17,17 +17,25 @@ namespace OAI {
 	typedef __uint32_t U32;
 	typedef __uint64_t U64;
 
-	struct F8 {
-		// N is how many 2's F8::Q is divided by to get the actual value of the fixed number, e.g. N=2,Q=3 <-> Value=3/2**2 = 3/4 = 0.75
-		// So the smaller N is, the more percise the whole number can be.
-		// Average ratio between performance of variable and non variable N is approx. 14/13. The performance difference is minimal, and coming at the advantage of defining your own N.
+	class F8 {
+		private:
 		static int N;
+		
+		public:
 		I8 Q;
 
 		F8() {}
 		inline F8(I8 X) {
 			Q = X;
 		}
+
+		// N is how many 2's F8::Q is divided by to get the actual value of the fixed number, e.g. N=2,Q=3 <-> Value=3/2**2 = 3/4 = 0.75
+		// So the smaller N is, the more percise the whole number can be.
+		// Average ratio between performance of variable and non variable N is approx. 14/13. The performance difference is minimal, and coming at the advantage of defining your own N.
+		static void SetN(int _N);
+		static int GetN();
+
+		float ToFloat();
 		
 		// Do X<<N to get X.0, otherwise X represents the internal quotient.
 		// F8& operator=(I8 X);
@@ -131,8 +139,6 @@ namespace OAI {
 			Q = ExQ;
 			return *this;
 		}
-
-		float ToFloat();
 
 	};
 

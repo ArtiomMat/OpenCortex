@@ -65,8 +65,8 @@ namespace OAI {
 		delete [] Layers;
 	}
 
+	F8 LeakyRELU_M = 1; // The smallest possible F8 value.
 	void NeuronsModel::Activate(F8& V, int Func) {
-		static F8 LeakyRELU_M = 1; // The smallest possible F8 value.
 		
 		switch (Func) {
 			case RELU:
