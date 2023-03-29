@@ -1,12 +1,12 @@
 #include <math.h>
 #include <string.h>
 
-#include "../Include/OctoAI.hpp"
+#include "Local.hpp"
 #include "Threads.hpp"
 
 namespace OAI {
 	const NeuronsModel::Layer NeuronsModel::NullLayer{0};
-
+	
 	NeuronsModel::RunState::RunState(int BigLayerNeuronsN) {
 		EntireBuf = new F8 [BigLayerNeuronsN * 2];
 		
@@ -60,6 +60,7 @@ namespace OAI {
 	}
 
 	NeuronsModel::~NeuronsModel() {
+		
 		delete [] Neurons;
 		delete [] Wires;
 		delete [] Layers;
@@ -75,10 +76,8 @@ namespace OAI {
 			break;
 			
 			case LeakyRELU:
-			if (V.Q < 0) {
-				printf("\n\nDUDE: %f\n\n", V.ToFloat());
+			if (V.Q < 0)
 				V *= LeakyRELU_M;
-			}
 			break;
 		}
 	}
@@ -154,7 +153,51 @@ namespace OAI {
 		return Bytes/1000000;
 	}
 
-	void NeuronsModel::Fit(FitnessGuider& Guider) {
+	bool NeuronsModel::Save(const char* FP) {
+		if (CheckFileExists(FP))
+			return false;
+		
+		FILE* F = fopen(FP, "wb+");
+		if (!F)
+			return false;
+		
+		
+		fwrite(&InputUnitsN, sizeof(InputUnitsN), 1, F);
+		fwrite(&BigLayerI, sizeof(BigLayerI), 1, F);
+		
+		fwrite(&LayersN, sizeof(LayersN), 1, F);
+
+		fwrite(Layers, sizeof(Layer), LayersN, F);
+		
+
+		fclose(F);
+	}
+
+	bool NeuronsModel::Load(const char* FP) {
+
+	}
+
+	bool NeuronsModel::Fit(FitnessGuider& Guider) {
+		LogName = "NeuronsModel::Fit"; // Sheesh. That's nasty. no reflection in C++ though :(
+
+		if (!Guider.BatchesN) {
+			Log("BatchesN is 0.\n");
+			return false;
+		}
+
+		// If the directory is not empty, very bad!
+		int BackupDirFilled = CheckDirFilled(Guider.BackupDirPath);
+		if (BackupDirFilled == -1) { // Doesn't exist
+			if (!CreateDir(Guider.BackupDirPath)) {
+				Log("'%s' doesn't exist and I can't create it. create it.\n", Guider.BackupDirPath);
+				return false;
+			}
+		}
+		else if (BackupDirFilled == 1) {
+			Log("'%s' isn't empty. Empty it.\n", Guider.BackupDirPath);
+			return false;
+		}
+
 		RunState State(Layers[BigLayerI].NeuronsN);
 		unsigned OutputSize = Layers[LayersN-1].NeuronsN;
 		F8* WantedOutput = new F8[OutputSize];
@@ -165,25 +208,37 @@ namespace OAI {
 			F8 Average;
 		} OutputCostAvgs;
 
+		FitnessGuider::EpochState ES;
+
 		// Epochs
-		while (1) {
-			// Batch samples
-			for (int SampleI = 0; SampleI < Guider.BatchSize; SampleI++) {
-				Guider.OnNextSample(State.Bufs[!State.FedBufI], WantedOutput);
-				// Run first layer
-				RunLayer(State, 0, InputUnitsN);
-				// Run the rest of the layers
-				for (unsigned LI = 1; LI < LayersN; LI++)
-					RunLayer(State, LI, Layers[LI-1].NeuronsN);
+		while (true) {
+			// Batches
+			static unsigned TrackedBatchI = 0;
+			static unsigned BackupI = 0;
+			for (unsigned BatchI = 0; BatchI < Guider.BatchesN; BatchI++, TrackedBatchI++) {
+				// Samples
+				for (unsigned SampleI = 0; SampleI < Guider.BatchSize; SampleI++) {
+					Guider.OnNextSample(State.Bufs[!State.FedBufI], WantedOutput);
+					// Run first layer
+					RunLayer(State, 0, InputUnitsN);
+					// Run the rest of the layers
+					for (unsigned LI = 1; LI < LayersN; LI++)
+						RunLayer(State, LI, Layers[LI-1].NeuronsN);
 
-				Output = State.Bufs[!State.FedBufI];
+					Output = State.Bufs[!State.FedBufI];
 
-
-				for (unsigned I = 0; I < OutputSize; I++) {
-					F8 Cost = (Output[I] - WantedOutput[I]);
-					Cost *= Cost;
+					for (unsigned I = 0; I < OutputSize; I++) {
+						F8 Cost = (Output[I] - WantedOutput[I]);
+						Cost *= Cost;
+					}
+				}
+				// Check if it's time to backup.
+				if (TrackedBatchI >= Guider.BackupBatchIndex) {
+					TrackedBatchI = 0;
 				}
 			}
+			if (Guider.OnEpoch(ES)) // Notify guider
+				break;
 			// The epoch logic, no worries about it.
 			if (Guider.MaxEpochsN) {
 				static unsigned EpochI = 1;
@@ -191,11 +246,10 @@ namespace OAI {
 					break;
 				EpochI++;
 			}
-			
-
-
-			// Calculate cost per neuron
 		}
 		delete [] WantedOutput;
+
+		return true;
 	}
+
 }

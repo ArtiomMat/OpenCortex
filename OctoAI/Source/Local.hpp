@@ -2,6 +2,15 @@
 
 #include "../Include/OctoAI.hpp"
 
+#define Printf(Fmt, Args)
+
 namespace OAI {
 	extern F8 LeakyRELU_M;
+
+	extern char* LogName;
+	extern void Log(const char* MsgFmt, ...);
+
+	extern bool CheckFileExists(const char* FP);
+	extern int CheckDirFilled(const char* DP);
+	extern bool CreateDir(const char* DP);
 }

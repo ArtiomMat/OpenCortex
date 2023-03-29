@@ -218,7 +218,6 @@ namespace OAI {
 			U32 NeuronsN : 29;
 			U32 Func : 3;
 		};
-
 		const static Layer NullLayer;
 
 		private:
@@ -244,11 +243,11 @@ namespace OAI {
 			F8 Weight;
 		}* Wires;
 
-		unsigned InputUnitsN;
-		unsigned BigLayerI;
+		U32 InputUnitsN;
+		U16 BigLayerI;
 
 		Layer* Layers;
-		unsigned LayersN;
+		U16 LayersN;
 
 		void Activate(F8& V, int Func);
 		
@@ -261,21 +260,27 @@ namespace OAI {
 		NeuronsModel(int InputUnitsN, Layer* L);
 		~NeuronsModel();
 
-		// bool Load(const char* FP);
-		// bool Save(const char* FP);
+		bool Load(const char* FP);
+		bool Save(const char* FP);
 
+		[[deprecated("Here so that I can implement the ")]]
 		void Run(Map* Maps, int MapsN);
 		void Run(F8* Input, F8* Output);
 
 		struct FitnessGuider {
-			const char* BackupDir = "_Backup";
+			const char* BackupDirPath = "_Backup";
 			// 0 for no backup, not recommended.
-			// Backup the model every BackupInterval batches.
-			U16 BackupInterval = 5;
+			// Backup the model every BackupBatchIndex+1 batches.
+			// You can suck my dick, you better backup your model.
+			U16 BackupBatchIndex = 5;
+			
+			// Must be set.
+			U16 BatchesN = 0;
 			U16 BatchSize = 6;
 
 			// 0 to skip and only use MinAvgCost
 			U16 MaxEpochsN = 0;
+			// If you wanna manage it yourself set it to 0, 
 			float MinAvgCost = 0.1F;
 
 			float Rate = 0.1F;
@@ -286,10 +291,12 @@ namespace OAI {
 			};
 
 			void (*OnNextSample) (F8* Input, F8* DesiredOutput) = nullptr;
-			void (*OnEpoch) (EpochState& EpochState);
+			// Your function blocks the fitting, so be aware of that.
+			// Returns if it wants to stop training or not, a special backup is made for this automatically incase you fuck up your on your side.
+			bool (*OnEpoch) (EpochState& ES);
 		};
 
-		void Fit(FitnessGuider& Guider);
+		bool Fit(FitnessGuider& Guider);
 
 		// LayersNeurons is 0 terminated.
 		// Returns the major part of memory needed in MB, the minor part is less than a single MB so no reason to add it.
