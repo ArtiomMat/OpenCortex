@@ -22,7 +22,7 @@ namespace OAI {
 		// We are looking for "cpu cores	: 4 or whatever"
 		const char Searched[] = "cores";
 
-		U8 C, SI;
+		TU8 C, SI;
 		bool TotallyFound = false;
 		
 		while ((C = fgetc(F)) != EOF) {
@@ -74,11 +74,11 @@ namespace OAI {
 		return TotallyFound;
 	}
 
-	U64 GetUsageTime() {
+	TU64 GetUsageTime() {
 		struct rusage Usage;
 		getrusage(RUSAGE_SELF, &Usage);
 
-		U64 Ret = Usage.ru_utime.tv_sec + Usage.ru_stime.tv_sec;
+		TU64 Ret = Usage.ru_utime.tv_sec + Usage.ru_stime.tv_sec;
 		Ret *= 1000000;
 		Ret += Usage.ru_utime.tv_usec + Usage.ru_stime.tv_usec;
 
@@ -118,7 +118,7 @@ namespace OAI {
 		delete [] Handles;
 		if (HandlesN != N) {
 			HandlesN = N;
-			Handles = new U64 [HandlesN];
+			Handles = new TU64 [HandlesN];
 		}
 	}
 
@@ -176,12 +176,12 @@ namespace OAI {
 	float Monitor::Open(void** Inputs, void** Outputs) {
 		static const int MaxLogsN = 4;
 		static int LogsN = 0;
-		static U16 UsageDeltaAvg = 0;
+		static TU16 UsageDeltaAvg = 0;
 
-		U64 StartUsage = GetUsageTime();
+		TU64 StartUsage = GetUsageTime();
 		Threader::Open(OptimalN, Inputs, Outputs);
 		Join();
-		U64 EndUsage = GetUsageTime();
+		TU64 EndUsage = GetUsageTime();
 
 		UsageDeltaAvg += EndUsage - StartUsage;
 

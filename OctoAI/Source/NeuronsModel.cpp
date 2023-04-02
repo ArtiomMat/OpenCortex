@@ -5,20 +5,20 @@
 #include "Threads.hpp"
 
 namespace OAI {
-	const NeuronsModel::Layer NeuronsModel::NullLayer{0};
+	const TNeuronsModel::TLayer TNeuronsModel::TLayer::Null{0};
 	
-	NeuronsModel::RunState::RunState(int BigLayerNeuronsN) {
-		EntireBuf = new F8 [BigLayerNeuronsN * 2];
+	TNeuronsModel::TRunState::TRunState(int BigLayerNeuronsN) {
+		EntireBuf = new TF8 [BigLayerNeuronsN * 2];
 		
 		Bufs[0] = EntireBuf;
 		Bufs[1] = Bufs[0] + BigLayerNeuronsN;
 	}
 
-	NeuronsModel::RunState::~RunState() {
+	TNeuronsModel::TRunState::~TRunState() {
 		delete [] EntireBuf;
 	}
 
-	NeuronsModel::NeuronsModel(int InputUnitsN, Layer* L) {
+	TNeuronsModel::TNeuronsModel(int InputUnitsN, TLayer* L) {
 		BigLayerI = 0;
 
 		this->InputUnitsN = InputUnitsN;
@@ -38,9 +38,9 @@ namespace OAI {
 				BigLayerI = I;
 		}
 
-		Neurons = new Neuron [TotalNeurons];
-		Wires = new Wire [TotalWires];
-		Layers = new Layer [LayersN];
+		Neurons = new TNeuron [TotalNeurons];
+		Wires = new TWire [TotalWires];
+		Layers = new TLayer [LayersN];
 
 		// Now setup all the layers
 		for (unsigned I = 0; I < LayersN; I++)
@@ -59,15 +59,15 @@ namespace OAI {
 		puts("\n");
 	}
 
-	NeuronsModel::~NeuronsModel() {
+	TNeuronsModel::~TNeuronsModel() {
 		
 		delete [] Neurons;
 		delete [] Wires;
 		delete [] Layers;
 	}
 
-	F8 LeakyRELU_M = 1; // The smallest possible F8 value.
-	void NeuronsModel::Activate(F8& V, int Func) {
+	TF8 LeakyRELU_M = 1; // The smallest possible F8 value.
+	void TNeuronsModel::Activate(TF8& V, int Func) {
 		
 		switch (Func) {
 			case RELU:
@@ -82,7 +82,7 @@ namespace OAI {
 		}
 	}
 
-	void NeuronsModel::RunChunk(RunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN) {
+	void TNeuronsModel::RunChunk(TRunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN) {
 		// Since we skip the FirstI layers we create a localTWI that later is added to the global TWI after running all the chunks
 		unsigned LocalTWI = State.TWI + (PrevNeuronsN * FirstI);
 	
@@ -106,7 +106,7 @@ namespace OAI {
 		}
 	}
 
-	void NeuronsModel::RunLayer(RunState& State, int LI, int PrevNeuronsN) {
+	void TNeuronsModel::RunLayer(TRunState& State, int LI, int PrevNeuronsN) {
 		RunChunk(State, LI, 0, Layers[LI].NeuronsN-1, PrevNeuronsN);
 
 		State.TWI += PrevNeuronsN * Layers[LI].NeuronsN; // Increment the total wire index
@@ -114,8 +114,8 @@ namespace OAI {
 		State.FedBufI = !State.FedBufI; // Swap buffers
 	}
 
-	void NeuronsModel::Run(F8* Arr, F8* Output) {
-		RunState State(Layers[BigLayerI].NeuronsN);
+	void TNeuronsModel::Run(TF8* Arr, TF8* Output) {
+		TRunState State(Layers[BigLayerI].NeuronsN);
 
 		// Run first layer, first copy the input array
 		memcpy(State.Bufs[!State.FedBufI], Arr, InputUnitsN);
@@ -128,8 +128,8 @@ namespace OAI {
 		memcpy(Output, State.Bufs[!State.FedBufI], Layers[LayersN-1].NeuronsN);
 	}
 
-	void NeuronsModel::Run(Map* Maps, int MapsN) {
-		F8* Arr = new F8[InputUnitsN];
+	void TNeuronsModel::Run(TMap* Maps, int MapsN) {
+		TF8* Arr = new TF8[InputUnitsN];
 		int Offset = 0;
 
 		// First we get the size of the array
@@ -144,16 +144,16 @@ namespace OAI {
 		delete [] Arr;
 	}
 
-	int NeuronsModel::CalcMemory(int InputsN, U16* LayersNeurons) {
-		unsigned long long Bytes = LayersNeurons[0] * (sizeof(Neuron) + sizeof(*Wires)*InputsN);
+	int TNeuronsModel::CalcMemory(int InputsN, TU16* LayersNeurons) {
+		unsigned long long Bytes = LayersNeurons[0] * (sizeof(TNeuron) + sizeof(*Wires)*InputsN);
 
 		for (int I = 1; LayersNeurons[I]; I++)
-			Bytes += LayersNeurons[I] * (sizeof(Neuron) + sizeof(*Wires)*LayersNeurons[I-1]);
+			Bytes += LayersNeurons[I] * (sizeof(TNeuron) + sizeof(*Wires)*LayersNeurons[I-1]);
 		
 		return Bytes/1000000;
 	}
 
-	bool NeuronsModel::Save(const char* FP) {
+	bool TNeuronsModel::Save(const char* FP) {
 		if (CheckFileExists(FP))
 			return false;
 		
@@ -167,17 +167,18 @@ namespace OAI {
 		
 		fwrite(&LayersN, sizeof(LayersN), 1, F);
 
-		fwrite(Layers, sizeof(Layer), LayersN, F);
+		fwrite(Layers, sizeof(TLayer), LayersN, F);
+		
 		
 
 		fclose(F);
 	}
 
-	bool NeuronsModel::Load(const char* FP) {
+	bool TNeuronsModel::Load(const char* FP) {
 
 	}
 
-	bool NeuronsModel::Fit(FitnessGuider& Guider) {
+	bool TNeuronsModel::Fit(TFitnessGuider& Guider) {
 		LogName = "NeuronsModel::Fit"; // Sheesh. That's nasty. no reflection in C++ though :(
 
 		if (!Guider.BatchesN) {
@@ -198,17 +199,23 @@ namespace OAI {
 			return false;
 		}
 
-		RunState State(Layers[BigLayerI].NeuronsN);
+		TRunState State(Layers[BigLayerI].NeuronsN);
 		unsigned OutputSize = Layers[LayersN-1].NeuronsN;
-		F8* WantedOutput = new F8[OutputSize];
-		F8* Output = nullptr;
-		struct {
-			U8 AddedElementsN; // How many elements are inside Added
-			F8 Added; // The added value to the sum;
-			F8 Average;
-		} OutputCostAvgs;
+		TF8* WantedOutput = new TF8[OutputSize];
+		TF8* Output = new TF8[OutputSize];
+		struct Cost {
+			// U16& BatchesN = Guider.BatchesN;
+			TU8 AddedN; // How many elements are inside Added
+			TF8 Added; // The added value to the sum;
+			
+			TF8 Avg;
 
-		FitnessGuider::EpochState ES;
+			int Add(TF8 Element) {
+				
+			}
+		}* AvgCosts;
+
+		TFitnessGuider::TEpochState ES;
 
 		// Epochs
 		while (true) {
@@ -228,7 +235,7 @@ namespace OAI {
 					Output = State.Bufs[!State.FedBufI];
 
 					for (unsigned I = 0; I < OutputSize; I++) {
-						F8 Cost = (Output[I] - WantedOutput[I]);
+						TF8 Cost = (Output[I] - WantedOutput[I]);
 						Cost *= Cost;
 					}
 				}
@@ -241,13 +248,14 @@ namespace OAI {
 				break;
 			// The epoch logic, no worries about it.
 			if (Guider.MaxEpochsN) {
-				static unsigned EpochI = 1;
-				if (EpochI > Guider.MaxEpochsN)
+				if (ES.EpochI > Guider.MaxEpochsN)
 					break;
-				EpochI++;
+				ES.EpochI++;
 			}
 		}
+
 		delete [] WantedOutput;
+		delete [] Output;
 
 		return true;
 	}

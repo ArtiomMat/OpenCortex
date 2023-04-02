@@ -1,17 +1,17 @@
 #include "Local.hpp"
 
 namespace OAI {
-	int F8::N = 4;
+	int TF8::N = 4;
 
-	float F8::ToFloat() {
+	float TF8::ToFloat() {
 		return ((float)Q)/(1<<N);
 	}
 	
-	int F8::GetN() {
+	int TF8::GetN() {
 		return N;
 	}
 
-	void F8::SetN(int NewN) {
+	void TF8::SetN(int NewN) {
 		N = NewN;
 
 		// Sets LeakyRELU_M regardless of N, as much as percision allows.

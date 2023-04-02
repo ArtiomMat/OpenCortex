@@ -8,7 +8,7 @@ double TestF8(unsigned Iterations) {
 
 	time(&StartT);
 
-	OAI::F8 A, B;
+	OAI::TF8 A, B;
 
 	for (unsigned I = 0; I < Iterations; I++) {
 		A = OAI::Rng();
@@ -68,13 +68,13 @@ int main() {
 	// 	A.Q = ExQ;
 	// }
 
-	OAI::F8::SetN(1);
-	OAI::F8::SetN(2);
-	OAI::F8::SetN(3);
-	OAI::F8::SetN(4);
-	OAI::F8::SetN(5);
-	OAI::F8::SetN(6);
-	OAI::F8::SetN(7);
+	OAI::TF8::SetN(1);
+	OAI::TF8::SetN(2);
+	OAI::TF8::SetN(3);
+	OAI::TF8::SetN(4);
+	OAI::TF8::SetN(5);
+	OAI::TF8::SetN(6);
+	OAI::TF8::SetN(7);
 
 	return 0;
 }

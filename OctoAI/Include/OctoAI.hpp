@@ -7,49 +7,47 @@
 #endif
 
 namespace OAI {
-	typedef __int8_t I8;
-	typedef __int16_t I16;
-	typedef __int32_t I32;
-	typedef __int64_t I64;
+	typedef __int8_t TI8;
+	typedef __int16_t TI16;
+	typedef __int32_t TI32;
+	typedef __int64_t TI64;
 
-	typedef __uint8_t U8;
-	typedef __uint16_t U16;
-	typedef __uint32_t U32;
-	typedef __uint64_t U64;
+	typedef __uint8_t TU8;
+	typedef __uint16_t TU16;
+	typedef __uint32_t TU32;
+	typedef __uint64_t TU64;
 
-	class F8 {
+	class TF8 {
 		private:
+		thread_local static TI16 ExQ;
 		static int N;
 		
 		public:
-		I8 Q;
+		TI8 Q;
 
-		F8() {}
-		inline F8(I8 X) {
+		TF8() {}
+		inline TF8(TI8 X) {
 			Q = X;
 		}
 
 		// N is how many 2's F8::Q is divided by to get the actual value of the fixed number, e.g. N=2,Q=3 <-> Value=3/2**2 = 3/4 = 0.75
 		// So the smaller N is, the more percise the whole number can be.
-		// Average ratio between performance of variable and non variable N is approx. 14/13. The performance difference is minimal, and coming at the advantage of defining your own N.
+		// Average ratio between performance of run-time and compile-time N is approx 14(sec)/13(sec). The performance difference is minimal, and comes at the advantage of defining your own N.
 		static void SetN(int _N);
 		static int GetN();
 
 		float ToFloat();
-		
-		// Do X<<N to get X.0, otherwise X represents the internal quotient.
-		// F8& operator=(I8 X);
 
 		inline bool operator!() {
 			return !Q;
 		}
 
-		inline F8& operator=(I8 X) {
+		inline TF8& operator=(TI8 X) {
 			Q = X;
 			return *this;
 		}
 		
-		inline static void CheckExQ(I16& ExQ) {
+		inline static void CheckExQ(TI16& ExQ) {
 			if (ExQ > 127)
 				ExQ = 127;
 			else if (ExQ < -128)
@@ -57,18 +55,14 @@ namespace OAI {
 		}
 
 		// TODO: Make it use JS and JO jump instructions instead.
-		inline F8 operator+(F8& O) {
-			I16 ExQ = Q;
-
+		inline TF8 operator+(TF8& O) {
 			ExQ += O.Q;
 
 			CheckExQ(ExQ);
 
-			return F8(ExQ);
+			return TF8(ExQ);
 		}
-		inline F8& operator+=(F8 O) {
-			I16 ExQ = Q;
-
+		inline TF8& operator+=(TF8 O) {
 			ExQ += O.Q;
 
 			CheckExQ(ExQ);
@@ -76,18 +70,14 @@ namespace OAI {
 			Q = ExQ;
 			return *this;
 		}
-		inline F8 operator-(F8& O) {
-			I16 ExQ = Q;
-
+		inline TF8 operator-(TF8& O) {
 			ExQ -= O.Q;
 
 			CheckExQ(ExQ);
 
-			return F8(ExQ);
+			return TF8(ExQ);
 		}
-		inline F8& operator-=(F8 O) {
-			I16 ExQ = Q;
-
+		inline TF8& operator-=(TF8 O) {
 			ExQ -= O.Q;
 			
 			CheckExQ(ExQ);
@@ -96,20 +86,16 @@ namespace OAI {
 			return *this;
 		}
 				// printf("\n%f*%f=", ToFloat(), O.ToFloat());
-			// printf("%f\n", F8((Q * O.Q) >> N).ToFloat());
-		inline F8 operator*(F8& O) {
-			I16 ExQ = Q;
-
+			// printf("%f\n", TF8((Q * O.Q) >> N).ToFloat());
+		inline TF8 operator*(TF8& O) {
 			ExQ *= O.Q;
 			ExQ >>= N;
 			
 			CheckExQ(ExQ);
 
-			return F8(ExQ);
+			return TF8(ExQ);
 		}
-		inline F8& operator*=(F8& O) {
-			I16 ExQ = Q;
-
+		inline TF8& operator*=(TF8& O) {
 			ExQ *= O.Q;
 			ExQ >>= N;
 			
@@ -118,19 +104,15 @@ namespace OAI {
 			Q = ExQ;
 			return *this;
 		}
-		inline F8 operator/(F8& O) {
-			I16 ExQ = Q;
-
+		inline TF8 operator/(TF8& O) {
 			ExQ <<= N;
 			ExQ /= O.Q;
 			
 			CheckExQ(ExQ);
 
-			return F8(ExQ);
+			return TF8(ExQ);
 		}
-		inline F8& operator/=(F8& O) {
-			I16 ExQ = Q;
-
+		inline TF8& operator/=(TF8& O) {
 			ExQ <<= N;
 			ExQ /= O.Q;
 
@@ -143,67 +125,67 @@ namespace OAI {
 	};
 
 
-	class Map {
+	class TMap {
 		public:
-
-		struct Config {
-			U16 Width, Height;
-			U16 ChannelsNum;
+		struct TConfig {
+			TU16 Width = 0, Height = 0;
+			TU16 ChannelsNum = 1;
 		};
 
-		U16 Width, Height;
-		U8* Data = nullptr;
-		U32 ChannelsNum;
+		TU16 Width, Height;
+		TU8* Data = nullptr;
+		TU32 ChannelsNum;
 		
 		// Copy a Map
-		Map(Map& other);
-		Map(const char* fp);
-		Map(U16 width, U16 height, U32 channelsNum);
-		// NOTE: Data is used as a pointer, not copied.
-		Map(U16 width, U16 height, U32 channelsNum, U8* data);
+		TMap(TMap& other);
+		TMap(const char* fp);
+		TMap(TConfig& Config);
+		// WARNING: Data is used, not copied.
+		TMap(TConfig& Config, TU8* data);
 		
-		~Map();
+		~TMap();
 
-		void SetPixel(U16 x, U16 y, const U8* pixel);
+		void SetPixel(TU16 x, TU16 y, const TU8* pixel);
 		// Returns actual pixel location, don't fuck with this pointer please.
-		U8* GetPixel(U16 x, U16 y);
-		void GetPixel(U16 x, U16 y, U8* output);
+		TU8* GetPixel(TU16 x, TU16 y);
+		void GetPixel(TU16 x, TU16 y, TU8* output);
 
-		void Crop(U16 left, U16 top, U16 right, U16 bottom);
-		void Rotate(float radians, U16 aroundX, U16 aroundY);
-		void Resize(U16 w, U16 h);
+		void Crop(TU16 left, TU16 top, TU16 right, TU16 bottom);
+		void Rotate(float radians, TU16 aroundX, TU16 aroundY);
+		void Resize(TU16 w, TU16 h);
 
-		void ResizeSmooth(U16 w, U16 h);
+		void ResizeSmooth(TU16 w, TU16 h);
 
 		bool Load(const char* Fp);
-		// Automatically determines file type by extension, if fails, saved as MAP(Custom simple format, should only use if there are channels nothing else supports).
+		// Automatically determines file type by extension, if it failes to detect file type, saved as RAW(Custom simple format, should only use if there are channels nothing else supports).
+		// If determined format doesn't support the channels used it is saved
 		bool Save(const char* Fp);
 
-		bool LoadMAP(FILE* F);
+		bool LoadRAW(FILE* F);
 		bool LoadJPG(FILE* F);
 		bool LoadPNG(FILE* F);
-		bool SaveMAP(const char* Fp);
+		bool SaveRAW(const char* Fp);
 		bool SaveJPG(const char* Fp);
 		bool SavePNG(const char* Fp);
 
 		protected:
-		void Allocate(U16 Width, U16 Height, U32 ChannelsNum);
+		void Allocate(TU16 Width, TU16 Height, TU32 ChannelsNum);
 		void Free();
 	};
 
-	class NeuronsModel;
-	class FiltersModel;
+	class TNeuronsModel;
+	class TFiltersModel;
 	
-	class Model {
+	class TModel {
 		public:
 		virtual bool Load(const char* FP) = 0;
 		virtual bool Save(const char* FP) = 0;
 
-		virtual void Run(Map* Maps, int MapsN) = 0;
-		virtual void Run(F8* Arr, F8* Output) = 0;
+		virtual void Run(TMap* Maps, int MapsN) = 0;
+		virtual void Run(TF8* Arr, TF8* Output) = 0;
 	};
 
-	enum Activation {
+	enum TActFunc {
 		Null,
 		RELU,
 		LeakyRELU,
@@ -212,102 +194,104 @@ namespace OAI {
 		TanH,
 	};
 
-	class NeuronsModel : public Model {
+	class TNeuronsModel : public TModel {
 		public:
-		struct Layer {
-			U32 NeuronsN : 29;
-			U32 Func : 3;
+		struct TLayer {
+			static const TLayer Null;
+
+			TU32 NeuronsN : 29;
+			TU32 Func : 3;
 		};
-		const static Layer NullLayer;
+		const static TLayer NullLayer;
 
 		private:
-		class RunState {
+		class TRunState {
 			public:
 			unsigned TWI = 0, TNI = 0;
 
-			U8 FedBufI = 1;
-			F8* Bufs[2];
+			TU8 FedBufI = 1;
+			TF8* Bufs[2];
 
-			RunState(int BigLayerNeuronsN);
-			~RunState();
+			TRunState(int BigLayerNeuronsN);
+			~TRunState();
 
 			private:
-			F8* EntireBuf;
+			TF8* EntireBuf;
 		};
 
-		struct Neuron {
-			F8 Bias;
+		struct TNeuron {
+			TF8 Bias;
 		}* Neurons;
 
-		struct Wire {
-			F8 Weight;
+		struct TWire {
+			TF8 Weight;
 		}* Wires;
 
-		U32 InputUnitsN;
-		U16 BigLayerI;
+		TU32 InputUnitsN;
+		TU16 BigLayerI;
 
-		Layer* Layers;
-		U16 LayersN;
+		TLayer* Layers;
+		TU16 LayersN;
 
-		void Activate(F8& V, int Func);
+		void Activate(TF8& V, int Func);
 		
-		void RunLayer(RunState& State, int LI, int PrevNeuronsN);
-		void RunChunk(RunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN);
+		void RunLayer(TRunState& State, int LI, int PrevNeuronsN);
+		void RunChunk(TRunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN);
 		public:
 		// NeuronsModel(const char* FP);
 		// Input sources include both raw inputs and model outputs as inputs.
 		// L is terminated with NeuronsModel::NullLayer (NeuronsN = 0)
-		NeuronsModel(int InputUnitsN, Layer* L);
-		~NeuronsModel();
+		TNeuronsModel(int InputUnitsN, TLayer* L);
+		~TNeuronsModel();
 
 		bool Load(const char* FP);
 		bool Save(const char* FP);
 
 		[[deprecated("Here so that I can implement the ")]]
-		void Run(Map* Maps, int MapsN);
-		void Run(F8* Input, F8* Output);
+		void Run(TMap* Maps, int MapsN);
+		void Run(TF8* Input, TF8* Output);
 
-		struct FitnessGuider {
+		struct TFitnessGuider {
 			const char* BackupDirPath = "_Backup";
 			// 0 for no backup, not recommended.
 			// Backup the model every BackupBatchIndex+1 batches.
 			// You can suck my dick, you better backup your model.
-			U16 BackupBatchIndex = 5;
+			TU16 BackupBatchIndex = 5;
 			
 			// Must be set.
-			U16 BatchesN = 0;
-			U16 BatchSize = 6;
+			TU16 BatchesN = 0;
+			TU16 BatchSize = 6;
 
 			// 0 to skip and only use MinAvgCost
-			U16 MaxEpochsN = 0;
+			TU16 MaxEpochsN = 0;
 			// If you wanna manage it yourself set it to 0, 
 			float MinAvgCost = 0.1F;
 
 			float Rate = 0.1F;
 			bool AutoRate = true;
 
-			struct EpochState {
-				F8 AvgCost;
+			struct TEpochState {
+				unsigned EpochI = 0;
+				TF8 AvgCost;
 			};
 
-			void (*OnNextSample) (F8* Input, F8* DesiredOutput) = nullptr;
+			void (*OnNextSample) (TF8* Input, TF8* DesiredOutput) = nullptr;
 			// Your function blocks the fitting, so be aware of that.
 			// Returns if it wants to stop training or not, a special backup is made for this automatically incase you fuck up your on your side.
-			bool (*OnEpoch) (EpochState& ES);
+			bool (*OnEpoch) (TEpochState& ES);
 		};
 
-		bool Fit(FitnessGuider& Guider);
+		bool Fit(TFitnessGuider& Guider);
 
 		// LayersNeurons is 0 terminated.
 		// Returns the major part of memory needed in MB, the minor part is less than a single MB so no reason to add it.
-		static int CalcMemory(int InputUnitsN, U16* LayersNeurons);
+		static int CalcMemory(int InputUnitsN, TU16* LayersNeurons);
 	};
 
-	class Brain {
+	class TBrain {
 		
 	};
 
 	extern void SetRngSeed(long long seed);
 	extern int Rng(void);
 }
-

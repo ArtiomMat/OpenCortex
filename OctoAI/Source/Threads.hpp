@@ -31,8 +31,8 @@ namespace OAI {
 		static void ThreadCall(ThreadCallArg* Arg);
 		void AllocHandles(int N);
 		
-		U8 HandlesN = 0;
-		U64* Handles = nullptr;
+		TU8 HandlesN = 0;
+		TU64* Handles = nullptr;
 	};
 	
 	// A monitor is a threader but smarter.
@@ -56,11 +56,11 @@ namespace OAI {
 		class History {
 			public:
 			Type* Arr;
-			U16 Size;
-			U16 First = 0;
-			U8 Full = 0;
+			TU16 Size;
+			TU16 First = 0;
+			TU8 Full = 0;
 
-			History(U32 Size) {
+			History(TU32 Size) {
 				this->Size = Size;
 				Arr = new Type [Size];
 			}
@@ -69,7 +69,7 @@ namespace OAI {
 				delete [] Arr;
 			}
 
-			U16 GetLength() {
+			TU16 GetLength() {
 				if (Full)
 					return Size;
 				return First;
@@ -80,7 +80,7 @@ namespace OAI {
 			}
 
 			// 1 <= VirtualI < Size
-			Type& GetRef(U32 VirtualI) {
+			Type& GetRef(TU32 VirtualI) {
 				if (Full)
 					VirtualI += First;
 
@@ -90,7 +90,7 @@ namespace OAI {
 				return Arr[VirtualI];
 			}
 
-			void Set(U32 VirtualI, Type Data) {
+			void Set(TU32 VirtualI, Type Data) {
 				GetRef(VirtualI) = Data;
 			}
 
@@ -103,7 +103,7 @@ namespace OAI {
 				}
 			}
 
-			Type& operator[](U32 VI) {
+			Type& operator[](TU32 VI) {
 				return GetRef(VI);
 			}
 			History& operator+=(Type X) {
@@ -113,8 +113,8 @@ namespace OAI {
 		};
 
 		struct Digest {
-			U16 UsageDeltaAvg = 0;
-			U16 OptimalN = 0;
+			TU16 UsageDeltaAvg = 0;
+			TU16 OptimalN = 0;
 		} Digest;
 
 
