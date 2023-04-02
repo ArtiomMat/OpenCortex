@@ -7,7 +7,7 @@
 namespace OAI {
 	extern TF8 LeakyRELU_M;
 
-	extern char* LogName;
+	extern const char* LogName;
 	extern void Log(const char* MsgFmt, ...);
 
 	extern bool CheckFileExists(const char* FP);

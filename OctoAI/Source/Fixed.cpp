@@ -2,6 +2,8 @@
 
 namespace OAI {
 	int TF8::N = 4;
+	thread_local TI16 TF8::ExQ;
+	thread_local int TF8::FlowState = 0;
 
 	float TF8::ToFloat() {
 		return ((float)Q)/(1<<N);

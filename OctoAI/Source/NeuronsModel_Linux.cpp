@@ -19,7 +19,7 @@ namespace OAI {
 	}
 
 	bool CreateDir(const char* DP) {
-		mkdir(DP, S_IRWXU | S_IRWXG | S_IRWXO); // or just ', 0777'
+		return !mkdir(DP, S_IRWXU | S_IRWXG | S_IRWXO); // or just ', 0777' 
 	}
 
 	int CheckDirFilled(const char* DP) {
@@ -33,7 +33,7 @@ namespace OAI {
 		bool Filled = 0;
 
 		// It has "." and ".." in it so skip 2 first.
-		for (int I = 0; DirEnt = readdir(Dir); I++) {
+		for (int I = 0; (DirEnt = readdir(Dir)); I++) {
 			if (I > 1) {
 				Filled = 1;
 				break;

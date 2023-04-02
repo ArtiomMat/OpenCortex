@@ -23,6 +23,8 @@ namespace OAI {
 		static int N;
 		
 		public:
+		// -1=underflow, 0=normalflow, 1=overflow.
+		thread_local static int FlowState;
 		TI8 Q;
 
 		TF8() {}
@@ -46,41 +48,51 @@ namespace OAI {
 			Q = X;
 			return *this;
 		}
-		
-		inline static void CheckExQ(TI16& ExQ) {
-			if (ExQ > 127)
+
+		// Returns if capped.
+		inline static bool CapExQ(TI16& ExQ) {
+			if (ExQ > 127) {
 				ExQ = 127;
-			else if (ExQ < -128)
+				return FlowState=1;
+			}
+			else if (ExQ < -128) {
 				ExQ = -128;
+				return FlowState=-1;
+			}
+			return FlowState=1;
 		}
 
 		// TODO: Make it use JS and JO jump instructions instead.
 		inline TF8 operator+(TF8& O) {
+			ExQ = Q;
 			ExQ += O.Q;
 
-			CheckExQ(ExQ);
+			CapExQ(ExQ);
 
 			return TF8(ExQ);
 		}
 		inline TF8& operator+=(TF8 O) {
+			ExQ = Q;
 			ExQ += O.Q;
 
-			CheckExQ(ExQ);
+			CapExQ(ExQ);
 
 			Q = ExQ;
 			return *this;
 		}
 		inline TF8 operator-(TF8& O) {
+			ExQ = Q;
 			ExQ -= O.Q;
 
-			CheckExQ(ExQ);
+			CapExQ(ExQ);
 
 			return TF8(ExQ);
 		}
 		inline TF8& operator-=(TF8 O) {
+			ExQ = Q;
 			ExQ -= O.Q;
 			
-			CheckExQ(ExQ);
+			CapExQ(ExQ);
 
 			Q = ExQ;
 			return *this;
@@ -88,35 +100,39 @@ namespace OAI {
 				// printf("\n%f*%f=", ToFloat(), O.ToFloat());
 			// printf("%f\n", TF8((Q * O.Q) >> N).ToFloat());
 		inline TF8 operator*(TF8& O) {
+			ExQ = Q;
 			ExQ *= O.Q;
 			ExQ >>= N;
 			
-			CheckExQ(ExQ);
+			CapExQ(ExQ);
 
 			return TF8(ExQ);
 		}
 		inline TF8& operator*=(TF8& O) {
+			ExQ = Q;
 			ExQ *= O.Q;
 			ExQ >>= N;
 			
-			CheckExQ(ExQ);
+			CapExQ(ExQ);
 
 			Q = ExQ;
 			return *this;
 		}
 		inline TF8 operator/(TF8& O) {
+			ExQ = Q;
 			ExQ <<= N;
 			ExQ /= O.Q;
 			
-			CheckExQ(ExQ);
+			CapExQ(ExQ);
 
 			return TF8(ExQ);
 		}
 		inline TF8& operator/=(TF8& O) {
+			ExQ = Q;
 			ExQ <<= N;
 			ExQ /= O.Q;
 
-			CheckExQ(ExQ);
+			CapExQ(ExQ);
 
 			Q = ExQ;
 			return *this;
@@ -125,7 +141,7 @@ namespace OAI {
 	};
 
 
-	class TMap {
+	class TMap2D {
 		public:
 		struct TConfig {
 			TU16 Width = 0, Height = 0;
@@ -137,13 +153,13 @@ namespace OAI {
 		TU32 ChannelsNum;
 		
 		// Copy a Map
-		TMap(TMap& other);
-		TMap(const char* fp);
-		TMap(TConfig& Config);
+		TMap2D(TMap2D& other);
+		TMap2D(const char* fp);
+		TMap2D(TConfig& Config);
 		// WARNING: Data is used, not copied.
-		TMap(TConfig& Config, TU8* data);
+		TMap2D(TConfig& Config, TU8* data);
 		
-		~TMap();
+		~TMap2D();
 
 		void SetPixel(TU16 x, TU16 y, const TU8* pixel);
 		// Returns actual pixel location, don't fuck with this pointer please.
@@ -173,20 +189,21 @@ namespace OAI {
 		void Free();
 	};
 
-	class TNeuronsModel;
-	class TFiltersModel;
+	class TNeuronsModel; // Neural based
+	class TExpands1DModel; // Deconvolution based
+	class TShrinks1DModel; // Convolution based
 	
 	class TModel {
 		public:
 		virtual bool Load(const char* FP) = 0;
 		virtual bool Save(const char* FP) = 0;
 
-		virtual void Run(TMap* Maps, int MapsN) = 0;
+		virtual void Run(TMap2D* Maps, int MapsN) = 0;
 		virtual void Run(TF8* Arr, TF8* Output) = 0;
 	};
 
 	enum TActFunc {
-		Null,
+		NullActFunc,
 		RELU,
 		LeakyRELU,
 		ELU,
@@ -221,34 +238,36 @@ namespace OAI {
 
 		struct TNeuron {
 			TF8 Bias;
-		}* Neurons;
+		}* Neurons = nullptr;
 
 		struct TWire {
 			TF8 Weight;
-		}* Wires;
+		}* Wires = nullptr;
 
 		TU32 InputUnitsN;
 		TU16 BigLayerI;
 
-		TLayer* Layers;
+		TLayer* Layers = nullptr;
 		TU16 LayersN;
 
 		void Activate(TF8& V, int Func);
 		
 		void RunLayer(TRunState& State, int LI, int PrevNeuronsN);
 		void RunChunk(TRunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN);
+
+		void Free();
 		public:
-		// NeuronsModel(const char* FP);
-		// Input sources include both raw inputs and model outputs as inputs.
+		// L includes the last layer ofc.
 		// L is terminated with NeuronsModel::NullLayer (NeuronsN = 0)
 		TNeuronsModel(int InputUnitsN, TLayer* L);
+		TNeuronsModel(const char* FP);
 		~TNeuronsModel();
 
 		bool Load(const char* FP);
 		bool Save(const char* FP);
 
 		[[deprecated("Here so that I can implement the ")]]
-		void Run(TMap* Maps, int MapsN);
+		void Run(TMap2D* Maps, int MapsN);
 		void Run(TF8* Input, TF8* Output);
 
 		struct TFitnessGuider {

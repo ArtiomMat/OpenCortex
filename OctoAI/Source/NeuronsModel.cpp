@@ -18,6 +18,10 @@ namespace OAI {
 		delete [] EntireBuf;
 	}
 
+	TNeuronsModel::TNeuronsModel(const char* FP) {
+		Load(FP);
+	}
+
 	TNeuronsModel::TNeuronsModel(int InputUnitsN, TLayer* L) {
 		BigLayerI = 0;
 
@@ -47,23 +51,26 @@ namespace OAI {
 			Layers[I] = L[I];
 		puts("Weights:");
 		for (unsigned I = 0; I < TotalWires; I++) {
-			Wires[I].Weight = rand() % 2;
+			Wires[I].Weight = rand() % 255;
 			printf("%f, ", Wires[I].Weight.ToFloat());
 		}
 		puts("\nBiases:");
 		for (unsigned I = 0; I < TotalNeurons; I++) {
-			Neurons[I].Bias = rand() % 2;
+			Neurons[I].Bias = rand() % 255;
 			printf("%f, ", Neurons[I].Bias.ToFloat());
 		}
 		
 		puts("\n");
 	}
 
-	TNeuronsModel::~TNeuronsModel() {
-		
+	void TNeuronsModel::Free() {
 		delete [] Neurons;
 		delete [] Wires;
 		delete [] Layers;
+	}
+
+	TNeuronsModel::~TNeuronsModel() {
+		Free();
 	}
 
 	TF8 LeakyRELU_M = 1; // The smallest possible F8 value.
@@ -157,10 +164,9 @@ namespace OAI {
 		if (CheckFileExists(FP))
 			return false;
 		
-		FILE* F = fopen(FP, "wb+");
+		FILE* F = fopen(FP, "wb");
 		if (!F)
 			return false;
-		
 		
 		fwrite(&InputUnitsN, sizeof(InputUnitsN), 1, F);
 		fwrite(&BigLayerI, sizeof(BigLayerI), 1, F);
@@ -169,15 +175,76 @@ namespace OAI {
 
 		fwrite(Layers, sizeof(TLayer), LayersN, F);
 		
+		TU32 TotalNeuronsN = Layers[0].NeuronsN;
+		TU32 TotalWiresN = Layers[0].NeuronsN * InputUnitsN;
+
+		// Already at least 2 layers because of the first check.
+		for (unsigned LayerI = 1; Layers[LayerI].NeuronsN; LayerI++) {
+			TotalNeuronsN += Layers[LayerI].NeuronsN;
+			TotalWiresN += Layers[LayerI].NeuronsN * Layers[LayerI-1].NeuronsN;
+		}
+		printf("%u\n", TotalWiresN);
+		fflush(stdout);
 		
+		// TotalNeuronsN and TotalWiresN so load doesn't have to worry.
+		fwrite(&TotalNeuronsN, sizeof(TotalNeuronsN), 1, F);
+		fwrite(Neurons, sizeof(TNeuron), TotalNeuronsN, F);
+
+		fwrite(&TotalWiresN, sizeof(TotalWiresN), 1, F);
+		fwrite(Wires, sizeof(TWire), TotalWiresN, F);
 
 		fclose(F);
+
+		return true;
 	}
 
 	bool TNeuronsModel::Load(const char* FP) {
+		Free();
 
+		FILE* F = fopen(FP, "rb");
+		if (!F)
+			return false;
+		
+		fread(&InputUnitsN, sizeof(InputUnitsN), 1, F);
+		fread(&BigLayerI, sizeof(BigLayerI), 1, F);
+		
+		fread(&LayersN, sizeof(LayersN), 1, F);
+		Layers = new TLayer[LayersN];
+		fread(Layers, sizeof(TLayer), LayersN, F);
+		
+		TU32 TotalNeuronsN, TotalWiresN;
+
+		// TotalNeuronsN and TotalWiresN so load doesn't have to worry.
+		fread(&TotalNeuronsN, sizeof(TotalNeuronsN), 1, F);
+		Neurons = new TNeuron[TotalNeuronsN];
+		fread(Neurons, sizeof(TNeuron), TotalNeuronsN, F);
+
+		fread(&TotalWiresN, sizeof(TotalWiresN), 1, F);
+		printf("%u\n", TotalWiresN);
+		fflush(stdout);
+		Wires = new TWire[TotalWiresN];
+		fread(Wires, sizeof(TWire), TotalWiresN, F);
+
+		puts("Weights:");
+		for (unsigned I = 0; I < TotalWiresN; I++) {
+			printf("%f, ", Wires[I].Weight.ToFloat());
+		}
+		puts("\nBiases:");
+		for (unsigned I = 0; I < TotalNeuronsN; I++) {
+			printf("%f, ", Neurons[I].Bias.ToFloat());
+		}
+
+		fclose(F);
+		return true;
 	}
 
+	/*
+		Some notes:
+		We are dealing with fucking 8 bit fixed points. So it makes sense we modify the general formula a little.
+
+		TODO: Experiment with hybrid function, C=MSE at D<1, C=MAE at D>1
+		* C = |WO-O|, instead of C=(WO-O)^2.
+	*/
 	bool TNeuronsModel::Fit(TFitnessGuider& Guider) {
 		LogName = "NeuronsModel::Fit"; // Sheesh. That's nasty. no reflection in C++ though :(
 
@@ -210,8 +277,9 @@ namespace OAI {
 			
 			TF8 Avg;
 
-			int Add(TF8 Element) {
-				
+			void Add(TF8 Element) {
+				static TI16 ExQ = Added.Q;
+				ExQ += Element;
 			}
 		}* AvgCosts;
 
@@ -221,7 +289,7 @@ namespace OAI {
 		while (true) {
 			// Batches
 			static unsigned TrackedBatchI = 0;
-			static unsigned BackupI = 0;
+			// static unsigned BackupI = 0;
 			for (unsigned BatchI = 0; BatchI < Guider.BatchesN; BatchI++, TrackedBatchI++) {
 				// Samples
 				for (unsigned SampleI = 0; SampleI < Guider.BatchSize; SampleI++) {
@@ -234,9 +302,13 @@ namespace OAI {
 
 					Output = State.Bufs[!State.FedBufI];
 
+					//
 					for (unsigned I = 0; I < OutputSize; I++) {
-						TF8 Cost = (Output[I] - WantedOutput[I]);
-						Cost *= Cost;
+						// C=|WO-O|  formula
+						TF8 C = (Output[I] - WantedOutput[I]);
+						// C *= C;
+						if (C.Q < 0)
+							C.Q = -C.Q;
 					}
 				}
 				// Check if it's time to backup.

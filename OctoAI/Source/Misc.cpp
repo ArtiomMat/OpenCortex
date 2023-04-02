@@ -14,7 +14,7 @@ namespace OAI {
 		return (int)RngSeed;
 	}
 
-	char* LogName = nullptr;
+	const char* LogName = nullptr;
 	void Log(const char* MsgFmt, ...) {
 		va_list Args;
 
