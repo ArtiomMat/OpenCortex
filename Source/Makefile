@@ -17,4 +17,3 @@ $(ODir)/Server.o: $(Objects)
 	cp ../libOctoAI.so ../../libOctoAI.so\
 
 	$(C) $(Flags) -o $@ $^ $(Libs)
-	$(C) -S $(Flags) -o WHAT Main.cpp

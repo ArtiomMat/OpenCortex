@@ -47,34 +47,16 @@ double TestFloat(unsigned Iterations) {
 }
 
 int main() {
-	// OAI::F8::N = 4;
+	// OAI::TNeuronsModel::TLayer L[] = {
+	// 	OAI::TNeuronsModel::TLayer{OAI::LeakyRELU, 5},
+	// 	OAI::TNeuronsModel::TLayer{OAI::LeakyRELU, 3},
+	// 	OAI::TNeuronsModel::TLayer{0, 1},
+	// };
+	OAI::TNeuronsModel Model("Model.m");
 
-	// OAI::F8 A, B;
+	Model.Fit()
 
-	// for (unsigned I = 0; I < 166666650; I++) {
-	// 	A = OAI::Rng();
-	// 	B = OAI::Rng();
-		
-	// 	printf("A = %f\nB = %f\n\n", A.ToFloat(), B.ToFloat());
-	// 	fflush(stdout);
-
-	// 	OAI::I16 ExQ = A.Q;
-
-	// 	ExQ <<= OAI::F8::N;
-	// 	ExQ /= B.Q;
-
-	// 	OAI::F8::CheckExQ(ExQ);
-
-	// 	A.Q = ExQ;
-	// }
-
-	OAI::TF8::SetN(1);
-	OAI::TF8::SetN(2);
-	OAI::TF8::SetN(3);
-	OAI::TF8::SetN(4);
-	OAI::TF8::SetN(5);
-	OAI::TF8::SetN(6);
-	OAI::TF8::SetN(7);
+	// Model.Save("Model.m");
 
 	return 0;
 }
