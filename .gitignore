@@ -1,3 +1,5 @@
 *.o
-*.so
+libOctoAI.so
 *.out
+mnist.img
+mnist.lbl

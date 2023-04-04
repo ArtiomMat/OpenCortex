@@ -166,11 +166,18 @@ namespace OAI {
 		TU8* GetPixel(TU16 x, TU16 y);
 		void GetPixel(TU16 x, TU16 y, TU8* output);
 
+		// Values are capped no worries.
+		void Contrast(float Factor);
+		// Pixel P becomes P*Factor, values are capped no worries.
+		void Lighten(float Factor);
+		void Noise(TU8 Strength);
+		void NoiseKiller(TU8 Chance);
+
 		void Crop(TU16 left, TU16 top, TU16 right, TU16 bottom);
 		void Rotate(float radians, TU16 aroundX, TU16 aroundY);
 		void Resize(TU16 w, TU16 h);
 
-		void ResizeSmooth(TU16 w, TU16 h);
+		// void ResizeSmooth(TU16 w, TU16 h);
 
 		bool Load(const char* Fp);
 		// Automatically determines file type by extension, if it failes to detect file type, saved as RAW(Custom simple format, should only use if there are channels nothing else supports).
@@ -311,7 +318,7 @@ namespace OAI {
 	class TBrain {
 		
 	};
-
+	
 	extern void SetRngSeed(long long seed);
 	extern int Rng(void);
 }

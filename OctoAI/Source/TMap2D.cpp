@@ -60,6 +60,40 @@ namespace OAI {
 		return Data+((Width*y+x)*ChannelsNum);
 	}
 
+	void TMap2D::Contrast(float Factor) {
+		for (unsigned I = 0; I < Width*Height*ChannelsNum; I++) {
+			TI16 New = Factor*(Data[I] - 127) + 127;
+			if (New > 255)
+				Data[I] = 255;
+			else if (New < 0)
+				Data[I] = 0;
+			else
+				Data[I] = New;
+		}
+	}
+	void TMap2D::Lighten(float Factor) {
+		for (unsigned I = 0; I < Width*Height*ChannelsNum; I++) {
+			TI16 New = Factor*Data[I];
+			if (New > 255)
+				Data[I] = 255;
+			else if (New < 0)
+				Data[I] = 0;
+			else
+				Data[I] = New;
+		}
+	}
+	void TMap2D::Noise(TU8 Strength) {
+		for (unsigned I = 0; I < Width*Height*ChannelsNum; I++) {
+			TI16 New = ((TI16)(Rng()%Strength))+Data[I];
+			if (New > 255)
+				Data[I] = 255;
+			else if (New < 0)
+				Data[I] = 0;
+			else
+				Data[I] = New;
+		}
+	}
+
 	void TMap2D::Crop(TU16 l, TU16 t, TU16 r, TU16 b) {
 		TU16 cropped_w = r-l, cropped_h = b-t;
 		TU8* cropped_data = (TU8*)calloc(sizeof(TU8)*ChannelsNum*cropped_w*cropped_h, 1);
