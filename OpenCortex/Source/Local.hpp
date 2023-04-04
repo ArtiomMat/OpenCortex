@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Include/OctoAI.hpp"
+#include "../Include/OpenCortex.hpp"
 
-namespace OAI {
+namespace OpenCortex {
 	extern TF8 LeakyRELU_M;
 
 	extern const char* LogName;

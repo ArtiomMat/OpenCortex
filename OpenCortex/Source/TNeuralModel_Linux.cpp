@@ -4,9 +4,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "../Include/OctoAI.hpp"
+#include "../Include/OpenCortex.hpp"
 
-namespace OAI {
+namespace OpenCortex {
 	bool CheckFileExists(const char* FP) {
 		return access(FP, F_OK) == 0;
 	}

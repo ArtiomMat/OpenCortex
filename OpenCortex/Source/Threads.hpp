@@ -1,9 +1,9 @@
 #pragma once
 // Real-time Multi-threading monitoring/managment library.
 
-#include "OctoAI.hpp"
+#include "OpenCortex.hpp"
 
-namespace OAI {
+namespace OpenCortex {
 	// If Threader gets out of scope it closes all threads it opened.
 	class Threader {
 		public:

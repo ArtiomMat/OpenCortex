@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-namespace OAI {
+namespace OpenCortex {
 	static long long RngSeed = 1;
 	void SetRngSeed(long long seed) {
 		RngSeed = seed;
@@ -19,8 +19,8 @@ namespace OAI {
 		va_list Args;
 
 		if (LogName != LastLogName) {
-			// 7m does reverse video
-			printf("\x1B[4mOAI::%s()\x1B[0m\n", LogName);
+			// 2m does underline
+			printf("\x1B[7mOpenCortex::%s()\x1B[0m\n", LogName);
 		}
 
 		if (Status != 0) {
@@ -39,6 +39,25 @@ namespace OAI {
 		fputs("\x1B[0m", stdout);
 
 		LastLogName = LogName;
+	}
+
+	void OldLog(char Status, const char* MsgFmt, ...) {
+		va_list Args;
+
+		printf("\x1B[4mOpenCortex::%s()\x1B[0m: ", LogName);
+		
+		if (Status != 0) {
+			if (Status == 1) Status = '2';
+			else if (Status == -1) Status = '1';
+			
+			printf("\x1B[9%cm", Status);
+		}
+
+		va_start(Args, MsgFmt);
+		vprintf(MsgFmt, Args);
+		va_end(Args);
+
+		fputs("\x1B[0m", stdout);
 	}
 
 }

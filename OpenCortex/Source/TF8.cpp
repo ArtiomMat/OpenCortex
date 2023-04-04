@@ -1,6 +1,6 @@
 #include "Local.hpp"
 
-namespace OAI {
+namespace OpenCortex {
 	int TF8::N = 4;
 	thread_local TI16 TF8::ExQ;
 	thread_local int TF8::FlowState = 0;

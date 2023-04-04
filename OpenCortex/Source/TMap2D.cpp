@@ -6,11 +6,11 @@
 #include <png.h>
 #include <jpeglib.h>
 
-#include "OctoAI.hpp"
+#include "OpenCortex.hpp"
 
 // Port from my mle_map library. WITH FIXES OF LEAKS LMAO.
 
-namespace OAI {
+namespace OpenCortex {
 	void TMap2D::Allocate(TU16 Width, TU16 Height, TU32 ChannelsNum) {
 		Free();
 		this->Width = Width;

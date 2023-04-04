@@ -8,10 +8,10 @@ C=g++
 Flags=-Wall -Werror -fPIC -L$(LDir) -I$(IDir)
 Libs=-lm -lpng -ljpeg
 
-Objects=Misc.o Fixed.o Threads$(OS).o TMap2D.o TNeuronsModel$(OS).o TNeuronsModel.o
+Objects=Misc.o TF8.o Threads$(OS).o TMap2D.o TNeuralModel$(OS).o TNeuralModel.o
 
 %.o: %.cpp
 	$(C) $(Flags) -c -o $@ $^
 
-$(ODir)/libOctoAI.so: $(Objects)
+$(ODir)/libOpenCortex.so: $(Objects)
 	$(C) $(Flags) -shared -o $@ $^ $(Libs)

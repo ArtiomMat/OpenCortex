@@ -4,31 +4,31 @@
 #include "Local.hpp"
 #include "Threads.hpp"
 
-namespace OAI {
-	const TNeuronsModel::TLayer TNeuronsModel::TLayer::Null{0};
+namespace OpenCortex {
+	const TNeuralModel::TLayer TNeuralModel::TLayer::Null{0};
 	
-	TNeuronsModel::TRunState::TRunState(int BigLayerNeuronsN) {
+	TNeuralModel::TRunState::TRunState(int BigLayerNeuronsN) {
 		EntireBuf = new TF8 [BigLayerNeuronsN * 2];
 		
 		Bufs[0] = EntireBuf;
 		Bufs[1] = Bufs[0] + BigLayerNeuronsN;
 	}
 
-	void TNeuronsModel::TRunState::Reset() {
+	void TNeuralModel::TRunState::Reset() {
 			TWI = TNI = 0;
 			FedBufI = 1;
 	}
 
-	TNeuronsModel::TRunState::~TRunState() {
+	TNeuralModel::TRunState::~TRunState() {
 		delete [] EntireBuf;
 	}
 
-	TNeuronsModel::TNeuronsModel(const char* FP) {
+	TNeuralModel::TNeuralModel(const char* FP) {
 		Load(FP);
 	}
 
-	TNeuronsModel::TNeuronsModel(int InputUnitsN, TLayer* L) {
-		LogName = "TNeuronsModel::TNeuronsModel";
+	TNeuralModel::TNeuralModel(int InputUnitsN, TLayer* L) {
+		LogName = "TNeuralModel::TNeuralModel";
 
 		BigLayerI = 0;
 
@@ -68,18 +68,18 @@ namespace OAI {
 		Log(1, "Setup done.\n");
 	}
 
-	void TNeuronsModel::Free() {
+	void TNeuralModel::Free() {
 		delete [] Neurons;
 		delete [] Wires;
 		delete [] Layers;
 	}
 
-	TNeuronsModel::~TNeuronsModel() {
+	TNeuralModel::~TNeuralModel() {
 		Free();
 	}
 
 	TF8 LeakyRELU_M = 1; // The smallest possible F8 value.
-	void TNeuronsModel::Activate(TF8& V, int Func) {
+	void TNeuralModel::Activate(TF8& V, int Func) {
 		
 		switch (Func) {
 			case RELU:
@@ -94,7 +94,7 @@ namespace OAI {
 		}
 	}
 
-	void TNeuronsModel::RunChunk(TRunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN) {
+	void TNeuralModel::RunChunk(TRunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN) {
 		// Since we skip the FirstI layers we create a localTWI that later is added to the global TWI after running all the chunks
 		unsigned LocalTWI = State.TWI + (PrevNeuronsN * FirstI);
 	
@@ -118,7 +118,7 @@ namespace OAI {
 		}
 	}
 
-	void TNeuronsModel::RunLayer(TRunState& State, int LI, int PrevNeuronsN) {
+	void TNeuralModel::RunLayer(TRunState& State, int LI, int PrevNeuronsN) {
 		RunChunk(State, LI, 0, Layers[LI].NeuronsN-1, PrevNeuronsN);
 
 		State.TWI += PrevNeuronsN * Layers[LI].NeuronsN; // Increment the total wire index
@@ -126,7 +126,7 @@ namespace OAI {
 		State.FedBufI = !State.FedBufI; // Swap buffers
 	}
 
-	void TNeuronsModel::Run(TF8* Arr, TF8* Output) {
+	void TNeuralModel::Run(TF8* Arr, TF8* Output) {
 		TRunState State(Layers[BigLayerI].NeuronsN);
 
 		// Run first layer, first copy the input array
@@ -140,7 +140,7 @@ namespace OAI {
 		memcpy(Output, State.Bufs[!State.FedBufI], Layers[LayersN-1].NeuronsN);
 	}
 
-	void TNeuronsModel::Run(TMap2D* Maps, int MapsN) {
+	void TNeuralModel::Run(TMap2D* Maps, int MapsN) {
 		TF8* Arr = new TF8[InputUnitsN];
 		int Offset = 0;
 
@@ -156,7 +156,7 @@ namespace OAI {
 		delete [] Arr;
 	}
 
-	int TNeuronsModel::CalcMemory(int InputsN, TU16* LayersNeurons) {
+	int TNeuralModel::CalcMemory(int InputsN, TU16* LayersNeurons) {
 		unsigned long long Bytes = LayersNeurons[0] * (sizeof(TNeuron) + sizeof(*Wires)*InputsN);
 
 		for (int I = 1; LayersNeurons[I]; I++)
@@ -165,7 +165,7 @@ namespace OAI {
 		return Bytes/1000000;
 	}
 
-	bool TNeuronsModel::Save(const char* FP) {
+	bool TNeuralModel::Save(const char* FP) {
 		if (CheckFileExists(FP))
 			return false;
 		
@@ -201,7 +201,7 @@ namespace OAI {
 		return true;
 	}
 
-	bool TNeuronsModel::Load(const char* FP) {
+	bool TNeuralModel::Load(const char* FP) {
 		Free();
 
 		FILE* F = fopen(FP, "rb");
@@ -239,10 +239,15 @@ namespace OAI {
 		TODO: Experiment with hybrid function, C=MSE at D<1, C=MAE at D>1
 		* C = |WO-O|, instead of C=(WO-O)^2.
 	*/
-	bool TNeuronsModel::Fit(TFitnessGuider& Guider) {
+	bool TNeuralModel::Fit(TFitnessGuider& Guider) {
 		// I know, it's nasty. no reflection in C++ though.
-		LogName = "TNeuronsModel::Fit";
+		LogName = "TNeuralModel::Fit";
 		
+		// Check if BatchSize is ok to compute with.
+		if (!(TF8(127) / TF8(Guider.BatchSize<<TF8::GetN()))) {
+			Log(-1, "BatchSize is too big, MaxTF8/it = 0.\n", Guider.BatchSize);
+		}
+
 		if (!Guider.BatchesN) {
 			Log(-1, "BatchesN = 0. You've got %d samples per batch, so split it up.\n", Guider.BatchSize);
 			return false;
@@ -260,11 +265,9 @@ namespace OAI {
 			Log(-1, "'%s' isn't empty. Empty it.\n", Guider.BackupDirPath);
 			return false;
 		}
-		else
-			Log(0, "How nice of you to prepare '%s' for me :)\n", Guider.BackupDirPath);
 
 		Log(1, "Successful setup. training starting.\n");
-		Log(1, "Go make a cup of Shoko or some shit.\n");
+		// Log(1, "Go make a cup of Shoko or some shit.\n");
 
 		return true;
 
@@ -272,18 +275,7 @@ namespace OAI {
 		unsigned OutputSize = Layers[LayersN-1].NeuronsN;
 		TF8* WantedOutput = new TF8[OutputSize];
 		TF8* Output = new TF8[OutputSize];
-		// struct Cost {
-		// 	// U16& BatchesN = Guider.BatchesN;
-		// 	TU8 AddedN; // How many elements are inside Added
-		// 	TF8 Added; // The added value to the sum;
-			
-		// 	TF8 Avg;
-
-		// 	void Add(TF8 Element) {
-		// 		static TI16 ExQ = Added.Q;
-		// 		ExQ += Element.Q;
-		// 	}
-		// }* AvgCosts;
+		// TF8* AvgCosts = new TF8[OutputSize];
 
 		TFitnessGuider::TEpochState ES;
 
@@ -304,13 +296,14 @@ namespace OAI {
 
 					Output = State.Bufs[!State.FedBufI];
 
-					// Fitting part
+					// Derermining the average costs.
 					for (unsigned I = 0; I < OutputSize; I++) {
-						// C=|WO-O|  formula
+						// C=|WO-O| formula
 						TF8 C = (Output[I] - WantedOutput[I]);
-						// C *= C;
 						if (C.Q < 0)
 							C.Q = -C.Q;
+						// Adding to the average
+						// TODO
 					}
 				}
 				// Check if it's time to backup.
@@ -325,6 +318,7 @@ namespace OAI {
 				break;
 			// The epoch logic, no worries about it.
 			if (Guider.MaxEpochsN) {
+				Log(0, "Epoch %u finished with C=%.3f. C improved %.3f%%", ES.EpochI);
 				if (ES.EpochI > Guider.MaxEpochsN)
 					break;
 				ES.EpochI++;
@@ -333,6 +327,7 @@ namespace OAI {
 
 		delete [] WantedOutput;
 		delete [] Output;
+		// delete [] AvgCosts;
 
 		return true;
 	}

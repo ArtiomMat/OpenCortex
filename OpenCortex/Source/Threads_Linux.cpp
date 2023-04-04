@@ -10,12 +10,12 @@
 #include <unistd.h>
 
 #include "Threads.hpp"
-#include "OctoAI.hpp"
+#include "OpenCortex.hpp"
 
-namespace OAI {
+namespace OpenCortex {
 	static int CoresN = 0;
 
-	bool Setup() {
+	static bool Setup() {
 		FILE* F = fopen("/proc/cpuinfo", "r");
 
 		// Searching for the cores thingy
@@ -220,7 +220,7 @@ void* Func(void* Input) {
 }
 
 int main() {
-	OAI::Monitor T(Func);
+	OpenCortex::Monitor T(Func);
 	void* Inputs[] = {nullptr,nullptr,nullptr};
 	T.Open(Inputs, Inputs);
 	T.Join();

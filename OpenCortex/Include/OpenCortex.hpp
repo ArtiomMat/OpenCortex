@@ -6,7 +6,7 @@
 	#error No __INT64_TYPE__? are you compiling this for a ?
 #endif
 
-namespace OAI {
+namespace OpenCortex {
 	typedef __int8_t TI8;
 	typedef __int16_t TI16;
 	typedef __int32_t TI32;
@@ -17,6 +17,7 @@ namespace OAI {
 	typedef __uint32_t TU32;
 	typedef __uint64_t TU64;
 
+	// To be used with TSynapticModel
 	class TF8 {
 		private:
 		static thread_local TI16 ExQ;
@@ -63,7 +64,7 @@ namespace OAI {
 		}
 
 		// TODO: Make it use JS and JO jump instructions instead.
-		inline TF8 operator+(TF8& O) {
+		inline TF8 operator+(TF8 O) {
 			ExQ = Q;
 			ExQ += O.Q;
 
@@ -80,7 +81,7 @@ namespace OAI {
 			Q = ExQ;
 			return *this;
 		}
-		inline TF8 operator-(TF8& O) {
+		inline TF8 operator-(TF8 O) {
 			ExQ = Q;
 			ExQ -= O.Q;
 
@@ -99,7 +100,7 @@ namespace OAI {
 		}
 				// printf("\n%f*%f=", ToFloat(), O.ToFloat());
 			// printf("%f\n", TF8((Q * O.Q) >> N).ToFloat());
-		inline TF8 operator*(TF8& O) {
+		inline TF8 operator*(TF8 O) {
 			ExQ = Q;
 			ExQ *= O.Q;
 			ExQ >>= N;
@@ -108,7 +109,7 @@ namespace OAI {
 
 			return TF8(ExQ);
 		}
-		inline TF8& operator*=(TF8& O) {
+		inline TF8& operator*=(TF8 O) {
 			ExQ = Q;
 			ExQ *= O.Q;
 			ExQ >>= N;
@@ -118,7 +119,7 @@ namespace OAI {
 			Q = ExQ;
 			return *this;
 		}
-		inline TF8 operator/(TF8& O) {
+		inline TF8 operator/(TF8 O) {
 			ExQ = Q;
 			ExQ <<= N;
 			ExQ /= O.Q;
@@ -127,7 +128,7 @@ namespace OAI {
 
 			return TF8(ExQ);
 		}
-		inline TF8& operator/=(TF8& O) {
+		inline TF8& operator/=(TF8 O) {
 			ExQ = Q;
 			ExQ <<= N;
 			ExQ /= O.Q;
@@ -197,9 +198,12 @@ namespace OAI {
 		void Free();
 	};
 
-	class TNeuronsModel; // Neural based
-	class TExpands1DModel; // Deconvolution based
-	class TShrinks1DModel; // Convolution based
+	// Custom model that is aimed at emulating the brain as close as possible.
+	class TSynaticModel;
+
+	class TNeuralModel; // Neural based
+	class TExpand1DModel; // Deconvolution based
+	class TShrink1DModel; // Convolution based
 	
 	class TModel {
 		public:
@@ -219,7 +223,7 @@ namespace OAI {
 		TanH,
 	};
 
-	class TNeuronsModel : public TModel {
+	class TNeuralModel : public TModel {
 		public:
 		struct TLayer {
 			static const TLayer Null;
@@ -269,9 +273,9 @@ namespace OAI {
 		public:
 		// L includes the last layer ofc.
 		// L is terminated with NeuronsModel::NullLayer (NeuronsN = 0)
-		TNeuronsModel(int InputUnitsN, TLayer* L);
-		TNeuronsModel(const char* FP);
-		~TNeuronsModel();
+		TNeuralModel(int InputUnitsN, TLayer* L);
+		TNeuralModel(const char* FP);
+		~TNeuralModel();
 
 		bool Load(const char* FP);
 		bool Save(const char* FP);
@@ -289,7 +293,7 @@ namespace OAI {
 			
 			// Must be set.
 			TU16 BatchesN = 0;
-			TU16 BatchSize = 6;
+			TU8 BatchSize = 6;
 
 			// 0 to skip and only use MinAvgCost
 			TU16 MaxEpochsN = 0;
