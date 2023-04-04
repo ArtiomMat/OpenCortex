@@ -14,6 +14,11 @@ namespace OAI {
 		Bufs[1] = Bufs[0] + BigLayerNeuronsN;
 	}
 
+	void TNeuronsModel::TRunState::Reset() {
+			TWI = TNI = 0;
+			FedBufI = 1;
+	}
+
 	TNeuronsModel::TRunState::~TRunState() {
 		delete [] EntireBuf;
 	}
@@ -23,6 +28,8 @@ namespace OAI {
 	}
 
 	TNeuronsModel::TNeuronsModel(int InputUnitsN, TLayer* L) {
+		LogName = "TNeuronsModel::TNeuronsModel";
+
 		BigLayerI = 0;
 
 		this->InputUnitsN = InputUnitsN;
@@ -49,18 +56,16 @@ namespace OAI {
 		// Now setup all the layers
 		for (unsigned I = 0; I < LayersN; I++)
 			Layers[I] = L[I];
-		puts("Weights:");
 		for (unsigned I = 0; I < TotalWires; I++) {
 			Wires[I].Weight = rand() % 255;
-			printf("%f, ", Wires[I].Weight.ToFloat());
+			// printf("%f, ", Wires[I].Weight.ToFloat());
 		}
-		puts("\nBiases:");
 		for (unsigned I = 0; I < TotalNeurons; I++) {
 			Neurons[I].Bias = rand() % 255;
-			printf("%f, ", Neurons[I].Bias.ToFloat());
+			// printf("%f, ", Neurons[I].Bias.ToFloat());
 		}
-		
-		puts("\n");
+
+		Log(1, "Setup done.\n");
 	}
 
 	void TNeuronsModel::Free() {
@@ -183,8 +188,6 @@ namespace OAI {
 			TotalNeuronsN += Layers[LayerI].NeuronsN;
 			TotalWiresN += Layers[LayerI].NeuronsN * Layers[LayerI-1].NeuronsN;
 		}
-		printf("%u\n", TotalWiresN);
-		fflush(stdout);
 		
 		// TotalNeuronsN and TotalWiresN so load doesn't have to worry.
 		fwrite(&TotalNeuronsN, sizeof(TotalNeuronsN), 1, F);
@@ -225,15 +228,6 @@ namespace OAI {
 		Wires = new TWire[TotalWiresN];
 		fread(Wires, sizeof(TWire), TotalWiresN, F);
 
-		puts("Weights:");
-		for (unsigned I = 0; I < TotalWiresN; I++) {
-			printf("%f, ", Wires[I].Weight.ToFloat());
-		}
-		puts("\nBiases:");
-		for (unsigned I = 0; I < TotalNeuronsN; I++) {
-			printf("%f, ", Neurons[I].Bias.ToFloat());
-		}
-
 		fclose(F);
 		return true;
 	}
@@ -246,10 +240,11 @@ namespace OAI {
 		* C = |WO-O|, instead of C=(WO-O)^2.
 	*/
 	bool TNeuronsModel::Fit(TFitnessGuider& Guider) {
-		LogName = "NeuronsModel::Fit"; // Sheesh. That's nasty. no reflection in C++ though :(
-
+		// I know, it's nasty. no reflection in C++ though.
+		LogName = "TNeuronsModel::Fit";
+		
 		if (!Guider.BatchesN) {
-			Log("BatchesN is 0.\n");
+			Log(-1, "BatchesN = 0. You've got %d samples per batch, so split it up.\n", Guider.BatchSize);
 			return false;
 		}
 
@@ -257,14 +252,21 @@ namespace OAI {
 		int BackupDirFilled = CheckDirFilled(Guider.BackupDirPath);
 		if (BackupDirFilled == -1) { // Doesn't exist
 			if (!CreateDir(Guider.BackupDirPath)) {
-				Log("'%s' doesn't exist and I can't create it. create it.\n", Guider.BackupDirPath);
+				Log(-1, "'%s' doesn't exist, I can't create it. Create it.\n", Guider.BackupDirPath);
 				return false;
 			}
 		}
 		else if (BackupDirFilled == 1) {
-			Log("'%s' isn't empty. Empty it.\n", Guider.BackupDirPath);
+			Log(-1, "'%s' isn't empty. Empty it.\n", Guider.BackupDirPath);
 			return false;
 		}
+		else
+			Log(0, "How nice of you to prepare '%s' for me :)\n", Guider.BackupDirPath);
+
+		Log(1, "Successful setup. training starting.\n");
+		Log(1, "Go make a cup of Shoko or some shit.\n");
+
+		return true;
 
 		TRunState State(Layers[BigLayerI].NeuronsN);
 		unsigned OutputSize = Layers[LayersN-1].NeuronsN;
@@ -289,7 +291,7 @@ namespace OAI {
 		while (true) {
 			// Batches
 			static unsigned TrackedBatchI = 0;
-			// static unsigned BackupI = 0;
+			static unsigned BackupI = 0;
 			for (unsigned BatchI = 0; BatchI < Guider.BatchesN; BatchI++, TrackedBatchI++) {
 				// Samples
 				for (unsigned SampleI = 0; SampleI < Guider.BatchSize; SampleI++) {
@@ -302,7 +304,7 @@ namespace OAI {
 
 					Output = State.Bufs[!State.FedBufI];
 
-					//
+					// Fitting part
 					for (unsigned I = 0; I < OutputSize; I++) {
 						// C=|WO-O|  formula
 						TF8 C = (Output[I] - WantedOutput[I]);
@@ -313,6 +315,9 @@ namespace OAI {
 				}
 				// Check if it's time to backup.
 				if (TrackedBatchI >= Guider.BackupBatchIndex) {
+					static char FP[256];
+					sprintf(FP, "%s/Backup%d", Guider.BackupDirPath, BackupI++);
+					Save(FP);
 					TrackedBatchI = 0;
 				}
 			}

@@ -2,13 +2,12 @@
 
 #include "../Include/OctoAI.hpp"
 
-#define Printf(Fmt, Args)
-
 namespace OAI {
 	extern TF8 LeakyRELU_M;
 
 	extern const char* LogName;
-	extern void Log(const char* MsgFmt, ...);
+	// -1 error, 0 nore/warning, 1 success
+	extern void Log(char Status, const char* MsgFmt, ...);
 
 	extern bool CheckFileExists(const char* FP);
 	

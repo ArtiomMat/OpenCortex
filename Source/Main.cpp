@@ -3,50 +3,6 @@
 
 #include "OctoAI.hpp"
 
-double TestF8(unsigned Iterations) {
-	time_t StartT, EndT;
-	double ElapsedT;
-
-	time(&StartT);
-
-	OAI::TF8 A, B;
-
-	for (unsigned I = 0; I < Iterations; I++) {
-		A = OAI::Rng();
-		B = OAI::Rng();
-		if (!B)
-			continue;
-		A /= B;
-	}
-
-	time(&EndT);
-
-	ElapsedT = difftime(EndT, StartT);
-	return ElapsedT;
-}
-
-double TestFloat(unsigned Iterations) {
-	time_t StartT, EndT;
-	double ElapsedT;
-
-	time(&StartT);
-
-	float A, B;
-
-	for (unsigned I = 0; I < Iterations; I++) {
-		A = (float)(OAI::Rng()%10000)/500.0f;
-		B = (float)(OAI::Rng()%10000)/500.0f;
-		if (B == 0.0f)
-			continue;
-		A /= B;
-	}
-
-	time(&EndT);
-
-	ElapsedT = difftime(EndT, StartT);
-	return ElapsedT;
-}
-
 static OAI::TU32 ImagesN, W, H;
 static FILE* ImgF = fopen("mnist.img", "rb");
 static FILE* LblF = fopen("mnist.lbl", "rb");
@@ -68,40 +24,89 @@ char LoadLabel(unsigned I) {
 	return Label;
 }
 
-int main() {
-	// OAI::TNeuronsModel::TLayer L[] = {
-	// 	OAI::TNeuronsModel::TLayer{OAI::LeakyRELU, 5},
-	// 	OAI::TNeuronsModel::TLayer{OAI::LeakyRELU, 3},
-	// 	OAI::TNeuronsModel::TLayer{0, 1},
-	// };
-	// OAI::TNeuronsModel Model("Model.m");
-
-	// Model.Fit()
-
-	if (!ImgF || !LblF)
-		return 1;
-	
-	fseek(ImgF, 4, SEEK_SET);
+void SetupLblF() {
 	fseek(LblF, 4, SEEK_SET);
 	fread(&ImagesN, sizeof(OAI::TU32), 1, LblF);
+	ImagesN = __bswap_32(ImagesN);
+}
+
+void SetupImgF() {
+	fseek(ImgF, 4, SEEK_SET);
 	fread(&ImagesN, sizeof(OAI::TU32), 1, ImgF);
 	fread(&W, sizeof(OAI::TU32), 1, ImgF);
 	fread(&H, sizeof(OAI::TU32), 1, ImgF);
-	
+
+	// The seems to be big endian, x86 is little endian ha.
 	ImagesN = __bswap_32(ImagesN);
 	W = __bswap_32(W);
 	H = __bswap_32(H);
-	
-	OAI::TU8* Data = new OAI::TU8[W*H*1];
-	
-	LoadImage(2, Data);
-	printf("Label: %d\n", LoadLabel(2));
+}
 
-	OAI::TMap2D::TConfig Cfg{.Width=(OAI::TU16)W,.Height=(OAI::TU16)H};
-	OAI::TMap2D Map(Cfg, Data);
-	Map.Resize(12,12);
-	// Map.Noise(30);
-	Map.Save("test.png");
+class TFG : public OAI::TNeuronsModel::TFitnessGuider {
+	public:
+	OAI::TU16 BatchSize = 6;
+
+	int I = 0;
+
+	TFG(int ImagesN) {
+		this->BatchesN = ImagesN/10;
+	}
+
+	void OnNextSample(OAI::TF8* Input, OAI::TF8* DesiredOutput) {
+		// We have to do some tricks to make it -X to X-h range in TF8.
+
+		fseek(ImgF, W*H*I + sizeof(OAI::TU32)*4, SEEK_SET);
+		for (unsigned J = 0; J < W*H; J++) {
+			int C = fgetc(ImgF);
+			C -= 128;
+			Input[J].Q = C;
+		}
+
+		int Label = LoadLabel(I);
+		for (int J = 0; J < 10; J++) {
+			DesiredOutput[J].Q = (J == Label) ? 127 : -128;
+		}
+	}
+
+	bool OnEpoch(TEpochState& State) {
+		I = 0; // Reset I
+		return true;
+	}
+};
+
+
+int main() {
+	if (!ImgF || !LblF) {
+		printf("Missing mnist database files.");
+		return 1;
+	}
+	
+	SetupImgF();
+	SetupLblF();
+	
+
+	// OAI::TMap2D::TConfig Cfg{.Width=(OAI::TU16)W,.Height=(OAI::TU16)H};
+	// OAI::TMap2D Map(Cfg, Data);
+	// Map.Resize(12,12);
+	// // Map.Noise(30);
+	// Map.Save("test.png");
+
+	OAI::TNeuronsModel::TLayer L[] = {
+		OAI::TNeuronsModel::TLayer{W*H, OAI::LeakyRELU},
+		
+		OAI::TNeuronsModel::TLayer{W*H/2, OAI::LeakyRELU},
+		OAI::TNeuronsModel::TLayer{W*H/4, OAI::LeakyRELU},
+
+		OAI::TNeuronsModel::TLayer{10, OAI::LeakyRELU},
+		OAI::TNeuronsModel::TLayer::Null,
+	};
+	OAI::TNeuronsModel Model(W*H, L);
+	
+	TFG Guider(ImagesN);
+	
+	// printf("%d\n", Guider.BatchesN);
+
+	Model.Fit(Guider);
 
 	return 0;
 }

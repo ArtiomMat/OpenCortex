@@ -19,12 +19,12 @@ namespace OAI {
 
 	class TF8 {
 		private:
-		thread_local static TI16 ExQ;
+		static thread_local TI16 ExQ;
 		static int N;
 		
 		public:
 		// -1=underflow, 0=normalflow, 1=overflow.
-		thread_local static int FlowState;
+		static thread_local int FlowState;
 		TI8 Q;
 
 		TF8() {}
@@ -237,6 +237,8 @@ namespace OAI {
 			TU8 FedBufI = 1;
 			TF8* Bufs[2];
 
+			void Reset();
+
 			TRunState(int BigLayerNeuronsN);
 			~TRunState();
 
@@ -302,10 +304,11 @@ namespace OAI {
 				TF8 AvgCost;
 			};
 
-			void (*OnNextSample) (TF8* Input, TF8* DesiredOutput) = nullptr;
+			// DesiredOutput is after the activation function was applied
+			virtual void OnNextSample (TF8* Input, TF8* DesiredOutput) = 0;
 			// Your function blocks the fitting, so be aware of that.
 			// Returns if it wants to stop training or not, a special backup is made for this automatically incase you fuck up your on your side.
-			bool (*OnEpoch) (TEpochState& ES);
+			virtual bool OnEpoch (TEpochState& ES) = 0;
 		};
 
 		bool Fit(TFitnessGuider& Guider);

@@ -14,15 +14,31 @@ namespace OAI {
 		return (int)RngSeed;
 	}
 
-	const char* LogName = nullptr;
-	void Log(const char* MsgFmt, ...) {
+	const char* LogName = nullptr, * LastLogName = nullptr;
+	void Log(char Status, const char* MsgFmt, ...) {
 		va_list Args;
 
-		printf("OAI::%s(): ", LogName);
+		if (LogName != LastLogName) {
+			// 7m does reverse video
+			printf("\x1B[4mOAI::%s()\x1B[0m\n", LogName);
+		}
+
+		if (Status != 0) {
+			if (Status == 1) Status = '2';
+			else if (Status == -1) Status = '1';
+			
+			printf("\t\x1B[9%cm", Status);
+		}
+		else
+			putc('\t', stdout);
 
 		va_start(Args, MsgFmt);
-		printf(MsgFmt, Args);
+		vprintf(MsgFmt, Args);
 		va_end(Args);
+
+		fputs("\x1B[0m", stdout);
+
+		LastLogName = LogName;
 	}
 
 }
