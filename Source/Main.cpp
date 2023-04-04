@@ -1,17 +1,17 @@
 #include <time.h>
 #include <byteswap.h>
 
-#include "OctoAI.hpp"
+#include "OpenCortex.hpp"
 
-static OAI::TU32 ImagesN, W, H;
+static OpenCortex::TU32 ImagesN, W, H;
 static FILE* ImgF = fopen("mnist.img", "rb");
 static FILE* LblF = fopen("mnist.lbl", "rb");
 
-char LoadImage(unsigned I, OAI::TU8* Data) {
+char LoadImage(unsigned I, OpenCortex::TU8* Data) {
 	if (I >= ImagesN)
 		return false;
-	fseek(ImgF, W*H*I + sizeof(OAI::TU32)*4, SEEK_SET);
-	fread(Data, sizeof(OAI::TU8), W*H*1, ImgF);
+	fseek(ImgF, W*H*I + sizeof(OpenCortex::TU32)*4, SEEK_SET);
+	fread(Data, sizeof(OpenCortex::TU8), W*H*1, ImgF);
 	return true;
 }
 
@@ -19,22 +19,22 @@ char LoadLabel(unsigned I) {
 	if (I >= ImagesN)
 		return -1;
 	char Label;
-	fseek(LblF, I + sizeof(OAI::TU32)*2, SEEK_SET);
-	fread(&Label, sizeof(OAI::TU8), 1, LblF);
+	fseek(LblF, I + sizeof(OpenCortex::TU32)*2, SEEK_SET);
+	fread(&Label, sizeof(OpenCortex::TU8), 1, LblF);
 	return Label;
 }
 
 void SetupLblF() {
 	fseek(LblF, 4, SEEK_SET);
-	fread(&ImagesN, sizeof(OAI::TU32), 1, LblF);
+	fread(&ImagesN, sizeof(OpenCortex::TU32), 1, LblF);
 	ImagesN = __bswap_32(ImagesN);
 }
 
 void SetupImgF() {
 	fseek(ImgF, 4, SEEK_SET);
-	fread(&ImagesN, sizeof(OAI::TU32), 1, ImgF);
-	fread(&W, sizeof(OAI::TU32), 1, ImgF);
-	fread(&H, sizeof(OAI::TU32), 1, ImgF);
+	fread(&ImagesN, sizeof(OpenCortex::TU32), 1, ImgF);
+	fread(&W, sizeof(OpenCortex::TU32), 1, ImgF);
+	fread(&H, sizeof(OpenCortex::TU32), 1, ImgF);
 
 	// The seems to be big endian, x86 is little endian ha.
 	ImagesN = __bswap_32(ImagesN);
@@ -42,20 +42,20 @@ void SetupImgF() {
 	H = __bswap_32(H);
 }
 
-class TFG : public OAI::TNeuronsModel::TFitnessGuider {
+class TFG : public OpenCortex::TNeuralModel::TFitnessGuider {
 	public:
-	OAI::TU16 BatchSize = 6;
+	OpenCortex::TU16 BatchSize = 7;
 
 	int I = 0;
 
 	TFG(int ImagesN) {
-		this->BatchesN = ImagesN/10;
+		this->BatchesN = ImagesN/BatchSize;
 	}
 
-	void OnNextSample(OAI::TF8* Input, OAI::TF8* DesiredOutput) {
+	void OnNextSample(OpenCortex::TF8* Input, OpenCortex::TF8* DesiredOutput) {
 		// We have to do some tricks to make it -X to X-h range in TF8.
 
-		fseek(ImgF, W*H*I + sizeof(OAI::TU32)*4, SEEK_SET);
+		fseek(ImgF, W*H*I + sizeof(OpenCortex::TU32)*4, SEEK_SET);
 		for (unsigned J = 0; J < W*H; J++) {
 			int C = fgetc(ImgF);
 			C -= 128;
@@ -91,16 +91,16 @@ int main() {
 	// // Map.Noise(30);
 	// Map.Save("test.png");
 
-	OAI::TNeuronsModel::TLayer L[] = {
-		OAI::TNeuronsModel::TLayer{W*H, OAI::LeakyRELU},
+	OpenCortex::TNeuralModel::TLayer L[] = {
+		OpenCortex::TNeuralModel::TLayer{W*H, OpenCortex::LeakyRELU},
 		
-		OAI::TNeuronsModel::TLayer{W*H/2, OAI::LeakyRELU},
-		OAI::TNeuronsModel::TLayer{W*H/4, OAI::LeakyRELU},
+		OpenCortex::TNeuralModel::TLayer{W*H/2, OpenCortex::LeakyRELU},
+		OpenCortex::TNeuralModel::TLayer{W*H/4, OpenCortex::LeakyRELU},
 
-		OAI::TNeuronsModel::TLayer{10, OAI::LeakyRELU},
-		OAI::TNeuronsModel::TLayer::Null,
+		OpenCortex::TNeuralModel::TLayer{10, OpenCortex::LeakyRELU},
+		OpenCortex::TNeuralModel::TLayer::Null,
 	};
-	OAI::TNeuronsModel Model(W*H, L);
+	OpenCortex::TNeuralModel Model(W*H, L);
 	
 	TFG Guider(ImagesN);
 	

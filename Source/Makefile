@@ -3,8 +3,8 @@ OS=_Linux
 ODir=../
 
 C=g++
-Flags =-Wl,-rpath='$$ORIGIN' -Wall -Werror -fPIC -L../ -I../OctoAI/Include
-Libs =-lm -lOctoAI
+Flags =-Wl,-rpath='$$ORIGIN' -Wall -Werror -fPIC -L../ -I../OpenCortex/Include
+Libs =-lm -lOpenCortex
 
 Objects=Main.o
 
@@ -12,8 +12,8 @@ Objects=Main.o
 	$(C) $(Flags) -c -o $@ $^
 
 $(ODir)/Server.o: $(Objects)
-	cd ../OctoAI/Source/ &&\
+	cd ../OpenCortex/Source/ &&\
 	make &&\
-	cp ../libOctoAI.so ../../libOctoAI.so\
+	cp ../libOpenCortex.so ../../libOpenCortex.so\
 
 	$(C) $(Flags) -o $@ $^ $(Libs)
