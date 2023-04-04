@@ -53,13 +53,13 @@ namespace OAI {
 		inline static bool CapExQ(TI16& ExQ) {
 			if (ExQ > 127) {
 				ExQ = 127;
-				return FlowState=1;
+				return (FlowState=1);
 			}
 			else if (ExQ < -128) {
 				ExQ = -128;
-				return FlowState=-1;
+				return (FlowState=-1);
 			}
-			return FlowState=1;
+			return (FlowState=1);
 		}
 
 		// TODO: Make it use JS and JO jump instructions instead.
@@ -181,7 +181,8 @@ namespace OAI {
 		bool LoadJPG(FILE* F);
 		bool LoadPNG(FILE* F);
 		bool SaveRAW(const char* Fp);
-		bool SaveJPG(const char* Fp);
+		// 0<=quality<=100, 100 preserves as much details as jpeg possibly allows.
+		bool SaveJPG(const char* Fp, int quality);
 		bool SavePNG(const char* Fp);
 
 		protected:

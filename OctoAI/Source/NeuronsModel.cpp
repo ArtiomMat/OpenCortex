@@ -135,7 +135,7 @@ namespace OAI {
 		memcpy(Output, State.Bufs[!State.FedBufI], Layers[LayersN-1].NeuronsN);
 	}
 
-	void TNeuronsModel::Run(TMap* Maps, int MapsN) {
+	void TNeuronsModel::Run(TMap2D* Maps, int MapsN) {
 		TF8* Arr = new TF8[InputUnitsN];
 		int Offset = 0;
 
@@ -270,18 +270,18 @@ namespace OAI {
 		unsigned OutputSize = Layers[LayersN-1].NeuronsN;
 		TF8* WantedOutput = new TF8[OutputSize];
 		TF8* Output = new TF8[OutputSize];
-		struct Cost {
-			// U16& BatchesN = Guider.BatchesN;
-			TU8 AddedN; // How many elements are inside Added
-			TF8 Added; // The added value to the sum;
+		// struct Cost {
+		// 	// U16& BatchesN = Guider.BatchesN;
+		// 	TU8 AddedN; // How many elements are inside Added
+		// 	TF8 Added; // The added value to the sum;
 			
-			TF8 Avg;
+		// 	TF8 Avg;
 
-			void Add(TF8 Element) {
-				static TI16 ExQ = Added.Q;
-				ExQ += Element;
-			}
-		}* AvgCosts;
+		// 	void Add(TF8 Element) {
+		// 		static TI16 ExQ = Added.Q;
+		// 		ExQ += Element.Q;
+		// 	}
+		// }* AvgCosts;
 
 		TFitnessGuider::TEpochState ES;
 
