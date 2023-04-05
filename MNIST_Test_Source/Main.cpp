@@ -3,6 +3,8 @@
 
 #include "OpenCortex.hpp"
 
+static const int N2 = 5958, N0 = 5923;
+
 static OpenCortex::TU32 ImagesN, W, H;
 static FILE* ImgF = fopen("mnist.img", "rb");
 static FILE* LblF = fopen("mnist.lbl", "rb");
@@ -44,7 +46,8 @@ void SetupImgF() {
 
 class TFG : public OpenCortex::TNeuralModel::TFitnessGuider {
 	public:
-	OpenCortex::TU16 BatchSize = 7;
+	OpenCortex::TU16 BatchSize = 15;
+	OpenCortex::TU16 BackupBatchIndex = 20;
 
 	int I = 0;
 
@@ -52,19 +55,19 @@ class TFG : public OpenCortex::TNeuralModel::TFitnessGuider {
 		this->BatchesN = ImagesN/BatchSize;
 	}
 
-	void OnNextSample(OpenCortex::TF8* Input, OpenCortex::TF8* DesiredOutput) {
-		// We have to do some tricks to make it -X to X-h range in TF8.
+	void OnNextSample(OpenCortex::TF32* Input, OpenCortex::TF32* DesiredOutput) {
+		char Label;
+		for (Label = LoadLabel(I); Label != 0 && Label != 2; I++)
+			Label = LoadLabel(I);
 
 		fseek(ImgF, W*H*I + sizeof(OpenCortex::TU32)*4, SEEK_SET);
 		for (unsigned J = 0; J < W*H; J++) {
 			int C = fgetc(ImgF);
-			C -= 128;
-			Input[J].Q = C;
+			Input[J] = C/255.0f;
 		}
 
-		int Label = LoadLabel(I);
 		for (int J = 0; J < 10; J++) {
-			DesiredOutput[J].Q = (J == Label) ? 127 : -128;
+			DesiredOutput[J] = (J == Label) ? 1.0f : -1.0f; // TanH used
 		}
 	}
 
@@ -76,14 +79,26 @@ class TFG : public OpenCortex::TNeuralModel::TFitnessGuider {
 
 
 int main() {
+
 	if (!ImgF || !LblF) {
 		printf("Missing mnist database files.");
 		return 1;
 	}
-	
+
 	SetupImgF();
 	SetupLblF();
 	
+	// int C2 = 0, C0 = 0;
+	// for (unsigned I = 0; I < ImagesN; I++) {
+	// 	char L = LoadLabel(I);
+	// 	if (L == 2)
+	// 		C2++;
+	// 	else if (L == 0)
+	// 		C0++;
+	// }
+
+	// printf("%d 2's and %d 0's\n", C2, C0);
+	// return 0;
 
 	// OAI::TMap2D::TConfig Cfg{.Width=(OAI::TU16)W,.Height=(OAI::TU16)H};
 	// OAI::TMap2D Map(Cfg, Data);
@@ -97,16 +112,18 @@ int main() {
 		OpenCortex::TNeuralModel::TLayer{W*H/2, OpenCortex::LeakyRELU},
 		OpenCortex::TNeuralModel::TLayer{W*H/4, OpenCortex::LeakyRELU},
 
-		OpenCortex::TNeuralModel::TLayer{10, OpenCortex::LeakyRELU},
+		OpenCortex::TNeuralModel::TLayer{1, OpenCortex::TanH},
 		OpenCortex::TNeuralModel::TLayer::Null,
 	};
 	OpenCortex::TNeuralModel Model(W*H, L);
 	
-	TFG Guider(ImagesN);
-	
-	// printf("%d\n", Guider.BatchesN);
+	// printf("%d\n", OpenCortex::TNeuralModel::CalcMemory(W*H, L));
 
-	Model.Fit(Guider);
+	TFG Guider(ImagesN);
+	OpenCortex::TF32* I = new OpenCortex::TF32[W*H];
+	OpenCortex::TF32 O;
+	Model.Run(I, &O);
+				puts("."); fflush(stdout);
 
 	return 0;
 }
