@@ -66,9 +66,8 @@ class TFG : public OpenCortex::TNeuralModel::TFitnessGuider {
 			Input[J] = C/255.0f;
 		}
 
-		for (int J = 0; J < 10; J++) {
-			DesiredOutput[J] = (J == Label) ? 1.0f : -1.0f; // TanH used
-		}
+		// 1 = "2", -1 = "0"
+		DesiredOutput[0] = (Label == 2) ? 1.0f : -1.0f; // TanH used
 	}
 
 	bool OnEpoch(TEpochState& State) {
@@ -120,10 +119,8 @@ int main() {
 	// printf("%d\n", OpenCortex::TNeuralModel::CalcMemory(W*H, L));
 
 	TFG Guider(ImagesN);
-	OpenCortex::TF32* I = new OpenCortex::TF32[W*H];
-	OpenCortex::TF32 O;
-	Model.Run(I, &O);
-				puts("."); fflush(stdout);
+
+	Model.Fit(Guider);
 
 	return 0;
 }

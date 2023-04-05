@@ -17,6 +17,9 @@ namespace OpenCortex {
 	typedef __uint32_t TU32;
 	typedef __uint64_t TU64;
 
+	typedef _Float32 TF32;
+	typedef _Float64 TF64;
+
 	// To be used with TSynapticModel
 	class TF8 {
 		private:
@@ -211,14 +214,13 @@ namespace OpenCortex {
 		virtual bool Save(const char* FP) = 0;
 
 		virtual void Run(TMap2D* Maps, int MapsN) = 0;
-		virtual void Run(TF8* Arr, TF8* Output) = 0;
+		virtual void Run(TF32* Arr, TF32* Output) = 0;
 	};
 
 	enum TActFunc {
 		NullActFunc,
 		RELU,
 		LeakyRELU,
-		ELU,
 		Sigmoid,
 		TanH,
 	};
@@ -234,40 +236,49 @@ namespace OpenCortex {
 		const static TLayer NullLayer;
 
 		private:
-		class TRunState {
+		class TRunner {
 			public:
+			static const TF32 LeakyRELU_M;
+
+			// It is an index the subroutines of Run() use to keep track of where they are in terms of reading wire/neuron values.
 			unsigned TWI = 0, TNI = 0;
 
+			// The buffer that is currently being fed into from the last one
+			// Essentially the one where the new activations are.
 			TU8 FedBufI = 1;
-			TF8* Bufs[2];
+			TF32* Bufs[2];
 
-			void Reset();
-
-			TRunState(int BigLayerNeuronsN);
-			~TRunState();
+			TRunner(TNeuralModel* NM);
+			~TRunner();
+			
+			TF32* GetInputBuffer();
+			void Run(TF32* Input, TF32* OutputPtr);
+			// Assumes input buffer was written to manually, GetInputBuffer().
+			TF32* Run();
 
 			private:
-			TF8* EntireBuf;
+			void Reset();
+			void RunLayer(unsigned LI, unsigned PrevNeuronsN);
+			void RunChunk(unsigned LI, unsigned FirstI, unsigned LastI, unsigned PrevNeuronsN);
+			void Activate(TF32& V, int Func);
+
+			TF32* EntireBuf = nullptr;
+			TNeuralModel* NM;
 		};
 
 		struct TNeuron {
-			TF8 Bias;
+			TF32 Bias;
 		}* Neurons = nullptr;
 
 		struct TWire {
-			TF8 Weight;
+			TF32 Weight;
 		}* Wires = nullptr;
 
 		TU32 InputUnitsN;
-		TU16 BigLayerI;
+		TU32 MaxUnitsN;
 
 		TLayer* Layers = nullptr;
 		TU16 LayersN;
-
-		void Activate(TF8& V, int Func);
-		
-		void RunLayer(TRunState& State, int LI, int PrevNeuronsN);
-		void RunChunk(TRunState& State, int LI, int FirstI, int LastI, int PrevNeuronsN);
 
 		void Free();
 		public:
@@ -282,7 +293,7 @@ namespace OpenCortex {
 
 		[[deprecated("Here so that I can implement the ")]]
 		void Run(TMap2D* Maps, int MapsN);
-		void Run(TF8* Input, TF8* Output);
+		void Run(TF32* Input, TF32* Output);
 
 		struct TFitnessGuider {
 			const char* BackupDirPath = "_Backup";
@@ -305,11 +316,11 @@ namespace OpenCortex {
 
 			struct TEpochState {
 				unsigned EpochI = 0;
-				TF8 AvgCost;
+				TF32 AvgCost;
 			};
 
 			// DesiredOutput is after the activation function was applied
-			virtual void OnNextSample (TF8* Input, TF8* DesiredOutput) = 0;
+			virtual void OnNextSample (TF32* Input, TF32* DesiredOutput) = 0;
 			// Your function blocks the fitting, so be aware of that.
 			// Returns if it wants to stop training or not, a special backup is made for this automatically incase you fuck up your on your side.
 			virtual bool OnEpoch (TEpochState& ES) = 0;
@@ -319,7 +330,7 @@ namespace OpenCortex {
 
 		// LayersNeurons is 0 terminated.
 		// Returns the major part of memory needed in MB, the minor part is less than a single MB so no reason to add it.
-		static int CalcMemory(int InputUnitsN, TU16* LayersNeurons);
+		static int CalcMemory(int InputUnitsN, TLayer* LayersNeurons);
 	};
 
 	class TBrain {
