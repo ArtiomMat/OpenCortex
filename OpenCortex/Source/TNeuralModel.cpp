@@ -11,6 +11,8 @@ namespace OpenCortex {
 		this->NM = NM;
 		
 		EntireBuf = new TF32[NM->MaxUnitsN * 2];
+		// for (unsigned I = 0; I <NM->MaxUnitsN; I++)
+		// 	EntireBuf[I] = 0;
 		Bufs[0] = EntireBuf;
 		Bufs[1] = Bufs[0] + NM->MaxUnitsN;
 		printf("EntireBuffer=%p\n", EntireBuf);
@@ -20,7 +22,6 @@ namespace OpenCortex {
 		TWI = 0;
 		TNI = 0;
 		FedBufI = 1;
-
 	}
 
 	TF32* TNeuralModel::TRunner::GetInputBuffer() {
@@ -48,8 +49,22 @@ namespace OpenCortex {
 			case TanH:
 			Log(0, "V = %f\n", V);
 			V = tanhf(V);
+			Log(0, "V = %f\n", V);
 			break;
 		}
+	}
+
+	// Assumes input buffer was written to manually, GetInputBuffer().
+	TF32* TNeuralModel::TRunner::Run() {
+		// Run first layer, first copy the input array
+		RunLayer(0, NM->InputUnitsN);
+
+		// Run the rest of the layers
+		for (unsigned LI = 1; LI < NM->LayersN; LI++)
+			RunLayer(LI, NM->Layers[LI-1].NeuronsN);
+
+		Reset();
+		return Bufs[!FedBufI];
 	}
 
 	void TNeuralModel::TRunner::Run(TF32* Input, TF32* Output) {
@@ -69,24 +84,28 @@ namespace OpenCortex {
 	// So this is meant to be ran multiple times per layer, on different chunks of it, simultaneously. It's part of what makes THE G.O.A.T, THE G.O.A.T.
 	// 
 	void TNeuralModel::TRunner::RunChunk(unsigned LI, unsigned FirstI, unsigned LastI, unsigned PrevNeuronsN) {
-		// Since we skip the FirstI layers we create a localTWI that later is added to the global TWI after running all the chunks
+		// Since we skip the FirstI neurons we create a localTWI that later is added to the global TWI after running all the chunks
 		unsigned LocalTWI = TWI + (PrevNeuronsN * FirstI);
 		
 		for (unsigned RelNI = FirstI; RelNI <= LastI; RelNI++) {
-			unsigned FinalNI = RelNI + TNI; // Since we at
+			unsigned FinalNI = RelNI + TNI; 
 			Bufs[FedBufI][RelNI] = 0;
 
-			if (RelNI == 0)
-				printf("BEFORE: RelNI=%f\n", Bufs[FedBufI][RelNI]);
-			// WEIGHTS
+			// if (LI == 0)
+			// 	printf("BEFORE: RelNI=%f\n", Bufs[FedBufI][RelNI]);
+			// WIRES || WEIGHTS
 			for (unsigned RelWI = 0; RelWI < PrevNeuronsN; RelWI++) {
 				unsigned FinalWI = RelWI + LocalTWI;
 				Bufs[FedBufI][RelNI] += NM->Wires[FinalWI].Weight * Bufs[!FedBufI][RelWI];
+				if (LI == 0 && isnanf(NM->Wires[FinalWI].Weight))
+					printf("WIRES(LI=%d): RelNI(%d)+=(%d)%f*%f\n", LI, RelNI, RelWI, NM->Wires[FinalWI].Weight, Bufs[!FedBufI][RelWI]);
 			}
 			// BIAS
 			Bufs[FedBufI][RelNI] += NM->Neurons[FinalNI].Bias;
-			if (RelNI == 0)
-				printf("BIAS: RelNI+=%f\n\n", NM->Neurons[FinalNI].Bias);
+			// if (LI == 0)
+			// 	printf("BIAS: RelNI+=%f\n", NM->Neurons[FinalNI].Bias);
+			// if (LI == 0)
+			// 	printf("RESULT: RelNI=%f\n\n", Bufs[FedBufI][RelNI]);
 			// ACTIVATION
 			Activate(Bufs[FedBufI][RelNI], NM->Layers[LI].Func);
 
@@ -102,19 +121,6 @@ namespace OpenCortex {
 		TNI += NM->Layers[LI].NeuronsN; // Same with neurons
 
 		FedBufI = !FedBufI; // Swap buffers
-	}
-
-	// Assumes input buffer was written to manually, GetInputBuffer().
-	TF32* TNeuralModel::TRunner::Run() {
-		// Run first layer, first copy the input array
-		RunLayer(0, NM->InputUnitsN);
-
-		// Run the rest of the layers
-		for (unsigned LI = 1; LI < NM->LayersN; LI++)
-			RunLayer(LI, NM->Layers[LI-1].NeuronsN);
-
-		Reset();
-		return Bufs[!FedBufI];
 	}
 
 	TNeuralModel::TRunner::~TRunner() {
@@ -159,11 +165,15 @@ namespace OpenCortex {
 		for (unsigned I = 0; I < LayersN; I++)
 			Layers[I] = L[I];
 		for (unsigned I = 0; I < TotalWiresN; I++) {
-			Wires[I].Weight = (float)(Rng() % 1000) / (float)(Rng() % 1000);
+			float Divisor;
+			while (!(Divisor = (float)(Rng() % 9999)));
+			Wires[I].Weight = (float)(Rng() % 10) / Divisor;
 			// printf("%f, ", Wires[I].Weight.ToFloat());
 		}
 		for (unsigned I = 0; I < TotalNeuronsN; I++) {
-			Neurons[I].Bias = (float)(Rng() % 1000) / (float)(Rng() % 500);
+			float Divisor;
+			while (!(Divisor = (float)(Rng() % 9999)));
+			Neurons[I].Bias = (float)(Rng() % 10) / Divisor;
 			// printf("%f\n", Neurons[I].Bias);
 		}
 
@@ -335,29 +345,29 @@ namespace OpenCortex {
 					// Running the model
 					Guider.OnNextSample(State.GetInputBuffer(), WantedOutput);
 					Output = State.Run();
-
+					
 					// Adding to the average costs
 					for (unsigned I = 0; I < OutputSize; I++) {
 						// C=WO-O formula
 						TF32 C = (Output[I] - WantedOutput[I]);
 						AvgCosts[I] += C;
-						Log(0, "\tC%d = %f = %f - %f\n", I, C, Output[I], WantedOutput[I]);
+						// Log(0, "C%d = %f = %f - %f\n", I, C, Output[I], WantedOutput[I]);
 					}
 
 				}
 				if (TrackedBatchI >= 1) {
 					return true;
 				}
-				// Average
-				for (unsigned I = 0; I < OutputSize; I++)
+
+				// WELCOME CUNTS! THE FITTING SECTION.
+				for (unsigned I = 0; I < OutputSize; I++) {
 					AvgCosts[I] /= Guider.BatchSize;
-
-				for (unsigned I = 0; I < OutputSize; I++) 
 					Log(0, "C%d = %f\n", I, AvgCosts[I]);
-
-				// Reset average costs
-				for (unsigned I = 0; I < OutputSize; I++)
 					AvgCosts[I] = 0;
+
+					// TODO: Rewrite the running logic to save the network's activations :3.
+					// We need it to calculate the back propogations.
+				}
 				
 				// Check if it's time to backup.
 				if (TrackedBatchI >= Guider.BackupBatchIndex) {
