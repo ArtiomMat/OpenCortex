@@ -381,9 +381,8 @@ namespace OpenCortex {
 				break;
 			// The epoch logic, no worries about it.
 			if (Guider.MaxEpochsN) {
-				Log(0, "Epoch %u finished with C=%.3f. C improved %.3f%%", ES.EpochI);
-				break;	if (ES.EpochI > Guider.MaxEpochsN)
-				
+				if (Guider.MaxEpochsN >= ES.EpochI)
+					break;
 				ES.EpochI++;
 			}
 		}
